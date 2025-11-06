@@ -12,6 +12,7 @@ datasource db {
 model Post {
   id        Int       @id @default(autoincrement())
   title     String?   @db.VarChar(10)
+  subtitle  String?
   tag       String?   @db.VarChar(5)
   content   String?
   createdAt DateTime? @db.Time(6)
