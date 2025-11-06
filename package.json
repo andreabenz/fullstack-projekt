@@ -1,0 +1,39 @@
+{
+  "name": "fullstack-projekt",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "concurrently -k -n css,server \"npm:css:watch\" \"nodemon index.js\"",
+    "build": "npm run css:build",
+    "css:build": "npx @tailwindcss/cli -i ./src/styles/input.css -o ./public/styles.css --minify",
+    "css:watch": "npx @tailwindcss/cli -i ./src/styles/input.css -o ./public/styles.css --watch",
+    "prestart": "prisma migrate deploy",
+    "postinstall": "prisma generate && npm run css:build",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:generate": "prisma generate",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^6.19.0",
+    "dotenv": "^17.2.3",
+    "ejs": "^3.1.10",
+    "express": "^5.1.0",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "concurrently": "^9.2.1",
+    "express-ejs-layouts": "^2.5.1",
+    "nodemon": "^3.1.10",
+    "postcss": "^8.5.6",
+    "prisma": "^6.19.0",
+    "tailwindcss": "^4.1.16"
+  }
+}

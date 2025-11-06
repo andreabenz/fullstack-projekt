@@ -1,0 +1,16 @@
+<% const title = 'All Posts'; %>
+<% if (!posts.length) { %>
+    <p class="text-gray-600">No posts yet. <a href="/posts/new" class="text-blue-600 hover:underline">Create the first one</a>.</p>
+<% } else { %>
+    <ul class="divide-y divide-gray-200">
+        <% posts.forEach(p => { %>
+            <li class="py-3 flex items-center justify-between">
+                <div>
+                    <a href="/posts/<%= p.id %>" class="font-medium text-gray-900 hover:underline"><%= p.title %></a>
+                    <div class="text-xs text-gray-500">Created <%= new Date(p.createdAt).toLocaleString() %></div>
+                </div>
+                <a href="/posts/<%= p.id %>" class="text-sm text-blue-600 hover:underline">View</a>
+            </li>
+        <% }) %>
+    </ul>
+<% } %>

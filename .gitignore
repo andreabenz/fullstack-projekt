@@ -1,0 +1,14 @@
+node_modules
+
+# InteliJ
+.idea
+fullstack-prokekt.iml
+
+# environment variables
+.env
+
+#Tailwind
+/public/*.css
+
+#Prisma
+/generated/prisma
