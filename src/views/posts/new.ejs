@@ -1,0 +1,25 @@
+<% const title = "Hinzufügen"%>
+
+<form action="/posts" method="post">
+    <label class="text-lg font-bold">Titel
+        <input class="flex mt-1 mb-4 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-2/3 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder = "Gib deinen Titel ein" type="text" name="title" required>
+    </label>
+
+    <label class="text-lg font-medium">Kategorie
+        <select class="flex mt-1 mb-4 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-1/2 focus:outline-none focus:ring-2 focus:ring-blue-500" name="category" required>
+            <option value="" disabled selected>Wähle deine Kategorie aus</option>
+            <% categories.forEach(function(cat) { %>
+                <option value="<%= cat %>"><%= CATEGORY_LABELS[cat] || cat %></option>
+            <% }) %>
+        </select>
+    </label>
+
+    <label class="text-lg font-medium ">Beschreibung
+        <textarea class="flex mt-1 mb-4 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder = "Gib deine Beschreibung ein" rows="6" name="description" required></textarea>
+    </label>
+
+    <div class="flex flex-row-reverse justify-between items-center">
+        <button type="submit" class="text-md font-normal px-4 py-2 rounded md bg-blue-600 text-white shadow-sm hover:bg-blue-500 focus:ring-blue ring-offset-2 transition" >Erstellen</button>
+        <a href="/posts/" class="text-sm rounded-md border-gray-600 text-gray-600 shadow-sm px-4 py-2 hover:bg-gray-200 transition">Abbrechen</a>
+    </div>
+</form>
