@@ -4,16 +4,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title><%= typeof title !== 'undefined' ? title : 'Fullstack Projekt' %></title>
     <link rel="stylesheet" href="/public/styles.css"/>
+    <script src="/public/scripts/filterScript.js" defer></script>
 </head>
 
 <body class="bg-gray-50 text-gray-900 flex flex-col min-h-screen">
 <%# Header %>
 <%- include('./partials/header') %>
 
-<div class="max-w-6xl mx-auto py-8 px-4 flex space-x-6 mt-[4.25rem] items-start grow">
+<div class="max-w-6xl mx-auto py-8 px-4 flex space-x-6 mt-[4.25rem] items-start grow w-full">
 
     <%# Sidebar %>
-    <%- include('./partials/sidebar') %>
+
+    <%- typeof sidebar !== 'undefined' ? include('./partials/sidebar') : "" %>
 
     <%# Main Content %>
     <main class="flex-1">

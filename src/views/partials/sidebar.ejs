@@ -1,9 +1,20 @@
 <aside class="w-auto p-6 pt-3 pr-12 flex-shrink-0 sticky top-[6.25rem] ">
-    <h2 class="text-lg font-semibold mb-4 text-gray-800">Menü</h2>
-    <ul class="space-y-2">
-        <li><a href="/" class="block text-gray-700 hover:text-blue-600 hover:underline">Option1</a></li>
-        <li><a href="/" class="block text-gray-700 hover:text-blue-600 hover:underline">Option2</a></li>
-        <li><a href="/" class="block text-gray-700 hover:text-blue-600 hover:underline">Option3</a></li>
-        <li><a href="/" class="block text-gray-700 hover:text-blue-600 hover:underline">Option4</a></li>
-    </ul>
+    <h2 class="text-2xl font-semibold mb-4 text-gray-800">Kategorien</h2>
+    <form id="filterForm" class="space-y-2" method="get" action="/posts">
+        <% categories.forEach(function(cat) { %>
+            <label class="flex items-center space-x-2 cursor-pointer">
+                <input
+                        type="checkbox"
+                        name="filter"
+                        value="<%= cat %>"
+                        class="rounded text-blue-600 focus:ring-blue-500"
+                        <%= (Array.isArray(selectedFilters) && selectedFilters.includes(cat)) ? 'checked' : ''%>
+                >
+                <span class="text-gray-700 hover:text-blue-600 transition">
+                <%= CATEGORY_LABELS[cat] || cat %>
+            </span>
+            </label>
+        <% }) %>
+    </form>
+
 </aside>
