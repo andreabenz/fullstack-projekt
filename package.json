@@ -25,7 +25,9 @@
     "dotenv": "^17.2.3",
     "ejs": "^3.1.10",
     "express": "^5.1.0",
-    "pg": "^8.16.3"
+    "express-fileupload": "^1.5.2",
+    "pg": "^8.16.3",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.21",

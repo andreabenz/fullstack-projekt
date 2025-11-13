@@ -14,8 +14,17 @@ model Post {
   title       String?     @db.VarChar(10)
   category    categories?
   description String?
-  createdAt   DateTime?   @db.Time(6)
-  updatedAt   DateTime?   @updatedAt @db.Time(6)
+  createdAt   DateTime?   @default(now())
+  updatedAt   DateTime?   @updatedAt
+  images      Image[]
+}
+
+model Image {
+  id        Int      @id @default(autoincrement())
+  path      String
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    Int
+  createdAt DateTime @default(now())
 }
 
 enum categories {

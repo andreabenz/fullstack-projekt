@@ -1,6 +1,6 @@
 <% const title = "Hinzufügen"%>
 
-<form action="/posts" method="post">
+<form action="/posts" method="post" enctype="multipart/form-data">
     <label class="text-lg font-bold">Titel
         <input class="flex mt-1 mb-4 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-2/3 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder = "Gib deinen Titel ein" type="text" name="title" required>
     </label>
@@ -12,6 +12,10 @@
                 <option value="<%= cat %>"><%= CATEGORY_LABELS[cat] || cat %></option>
             <% }) %>
         </select>
+    </label>
+
+    <label class=" text-lg font-medium">Bild hochladen
+        <input type="file" name="images" accept="image/*" multiple class="block mt-1 mb-4 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-1/2 focus:outline-none focus:ring-2 focus:ring-blue-500">
     </label>
 
     <label class="text-lg font-medium ">Beschreibung
