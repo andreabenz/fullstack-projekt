@@ -43,3 +43,5 @@ The project uses a streamlined development setup with concurrent processes:
 - **Server Hot Reload** - nodemon restarts the Express server on code changes
 - **Database Migrations** - Prisma handles schema changes and database updates
 - **Automated Builds** - Post-install hooks ensure the app is ready to run
+
+                    <div class="images flex flex-wrap justify-between px-4 pt-4 rounded-md border-gray-400 shadow-sm">

@@ -5,7 +5,9 @@ const expressLayouts = require('express-ejs-layouts');
 const { PrismaClient, categories } = require('./generated/prisma');
 const fileUpload = require('express-fileupload');
 const fs = require('fs').promises;
-const { v4: uuidv4 } = require('uuid')
+const { v4: uuidv4 } = require('uuid');
+const Swiper = require('swiper');
+
 
 const app = express();
 const prisma = new PrismaClient();
@@ -63,7 +65,23 @@ app.get('/posts', async (req, res) => {
     });
 });
 
-// Create New
+// View specific post
+app.get('/posts/view/:id', async (req, res) => {
+    const id = Number(req.params.id);
+    const post = await prisma.post.findUnique({
+        where: {id},
+        include: {images: true}
+    });
+    if (!post) return res.status(404).send('Post not found');
+    res.render('posts/view', {
+        post, CATEGORY_LABELS: {
+            Kleider_Accessoires: 'Kleider/Accessoires',
+            M_bel: 'Möbel'
+        }
+    });
+});
+
+// Create new
 app.get('/posts/new', (req, res) => {
     res.render('posts/new', {
         categories: Object.values(categories),
@@ -73,6 +91,8 @@ app.get('/posts/new', (req, res) => {
         }
     });
 });
+
+// Post new
 app.post('/posts', async (req, res) => {
     const { title, category, description } = req.body;
 
