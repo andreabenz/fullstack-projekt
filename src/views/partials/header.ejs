@@ -8,13 +8,39 @@
                 Meine Webseite
             </a>
         </div>
-        <div class="flex flex-row-reverse items-start">
-            <a href="/login" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500 transition">
-                Login
-            </a>
-            <a href="/posts/new" class="text-sm rounded-md border-gray-600 text-gray-600 shadow-sm px-4 py-2 hover:bg-gray-200 transition mx-4">
-                Neu Erstellen
-            </a>
+        <div class="flex items-center justify-end gap-4">
+            <% if (typeof currentUser !== 'undefined' && currentUser) { %>
+                <!-- Avatar circle with first 2 characters -->
+                <a href="/profile"
+                   class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-300 text-gray-700 font-bold shadow-sm hover:bg-gray-200">
+                    <%= currentUser.id %>
+                </a>
+
+
+                <form action="/logout" method="post">
+                    <button type="submit" class="text-sm text-gray-600 hover:underline">
+                        Logout
+                    </button>
+                </form>
+
+                <a href="/posts/new"
+                   class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                    New Post
+                </a>
+                <a
+                    class="inline-flex items-center rounded-md ">
+                </a>
+
+            <% } else { %>
+                <a href="/login" class="text-sm text-gray-600 hover:underline">
+                    Login
+                </a>
+
+                <a href="/register"
+                   class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                    Register
+                </a>
+            <% } %>
         </div>
     </div>
 </header>
