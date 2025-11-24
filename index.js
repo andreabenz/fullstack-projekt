@@ -42,7 +42,7 @@ app.use(session({
 }))
 // make currentUser available to all views
 app.use((req, res, next) => {
-    res.locals.currentUser = req.session.userId ? { id: req.session.userId } : null;
+    res.locals.currentUser = req.session.userId ? { id: req.session.userId, username: req.session.username } : null;
     next();
 });
 
@@ -67,11 +67,15 @@ app.get('/register', (req, res) => {
 });
 
 app.post('/register', async (req, res) => {
-    const { email, password } = req.body;
+    const { email, username, password} = req.body;
 
     // Basic validation
-    if (!email || !password) {
-        return res.render('auth/register', { error: 'Email and password required' });
+    if (!email || !password || !username) {
+        return res.render('auth/register', { error: 'Email, password and username required' });
+    }
+
+    if (username.length > 15) {
+        return res.render('auth/register', { error: 'Username can\'t be longer than 15 characters' });
     }
 
     if (password.length < 6) {
@@ -79,10 +83,16 @@ app.post('/register', async (req, res) => {
     }
 
     try {
-        // Check if user exists
-        const existingUser = await prisma.user.findUnique({ where: { email } });
-        if (existingUser) {
+        // Check if email exists
+        const existingUserEmail = await prisma.user.findUnique({ where: { email } });
+        if (existingUserEmail) {
             return res.render('auth/register', { error: 'Email already registered' });
+        }
+
+        // Check if username exists
+        const existingUserUsername = await prisma.user.findUnique({ where: { username } });
+        if (existingUserUsername) {
+            return res.render('auth/register', { error: 'Username already exists, please choose another one' });
         }
 
         // Hash password
@@ -90,11 +100,12 @@ app.post('/register', async (req, res) => {
 
         // Create user
         const user = await prisma.user.create({
-            data: { email, passwordHash }
+            data: { email, username, passwordHash}
         });
 
         // Auto-login after registration
         req.session.userId = user.id;
+        req.session.username = user.username;
         res.redirect('/posts');
     } catch (error) {
         res.render('auth/register', { error: 'Registration failed' });
@@ -128,6 +139,7 @@ app.post('/login', async (req, res) => {
 
         // Set session
         req.session.userId = user.id;
+        req.session.username = user.username;
         res.redirect('/posts');
     } catch (error) {
         res.render('auth/login', { error: 'Login failed' });
