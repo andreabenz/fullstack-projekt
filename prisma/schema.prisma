@@ -12,7 +12,7 @@ datasource db {
 model User {
   id           Int      @id @default(autoincrement())
   email        String   @unique
-  username     String?  @unique @db.VarChar(15)
+  username     String   @unique @db.VarChar(15)
   passwordHash String
   createdAt    DateTime @default(now())
   posts        Post[]
@@ -31,12 +31,13 @@ model Post {
   userId      Int?
   images      Image[]
 
-  startingPrice Float     @default(10.00)
+  startingPrice Float
+  increment     increments
   buyNowPrice   Float?
   currentPrice  Float?
-  endsAt        DateTime?
+  endsAt        DateTime
   buyerId       Int?
-  isSold        Boolean   @default(false)
+  isSold        Boolean    @default(false)
   bids          Bid[]
 
   buyer User? @relation("Buyer", fields: [buyerId], references: [id])
@@ -72,4 +73,14 @@ enum categories {
   Deko
   Sport
   Sonstiges
+}
+
+enum increments {
+  ONE         @map("1")
+  FIVE        @map("5")
+  TEN         @map("10")
+  FIFTY       @map("50")
+  HUNDRED     @map("100")
+  FIVEHUNDRED @map("500")
+  THOUSAND    @map("1000")
 }

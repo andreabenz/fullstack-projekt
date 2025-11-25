@@ -2,7 +2,7 @@ require('dotenv').config();
 const path = require('path');
 const express = require('express');
 const expressLayouts = require('express-ejs-layouts');
-const { PrismaClient, categories } = require('./generated/prisma');
+const { PrismaClient, categories, increments } = require('./generated/prisma');
 const fileUpload = require('express-fileupload');
 const fs = require('fs').promises;
 const { v4: uuidv4 } = require('uuid');
@@ -29,7 +29,6 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 //public folder
 app.use('/public', express.static(path.join(__dirname, 'public')));
 // user setup and session configuration
-app.use(express.urlencoded({ extended: true }));
 app.use(session({
     secret: process.env.SESSION_SECRET || 'fallback_secret',
     resave: false,
@@ -210,19 +209,46 @@ app.get('/posts/new', requireAuth, (req, res) => {
         CATEGORY_LABELS: {
             Kleider_Accessoires: 'Kleider/Accessoires',
             M_bel: 'Möbel'
+        },
+        increments: Object.values(increments),
+        INCREMENT_VALUES: {
+            ONE: 1,
+            FIVE: 5,
+            TEN: 10,
+            FIFTY: 50,
+            HUNDRED: 100,
+            FIVEHUNDRED: 500,
+            THOUSAND: 1000
         }
     });
 });
 
 // post new
 app.post('/posts', requireAuth, async (req, res) => {
-    const { title, category, description } = req.body;
+    const { title, category, description, startingPrice, buyNowPrice, increment } = req.body;
 
     if (!Object.values(categories).includes(category)) {
         return res.status(400).send('Ungültige Kategorie');
     }
 
-    const newPost = await prisma.post.create({ data: {title, category, description} });
+    if (!Object.values(categories).includes(category)) {
+        return res.status(400).send('Ungültiges Inkrement')
+    }
+
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() +10);
+
+    const newPost = await prisma.post.create( {
+        data: {
+            title, category, description,
+            startingPrice: parseFloat(startingPrice),
+            userId: req.session.userId,
+            buyNowPrice: buyNowPrice ? parseFloat(buyNowPrice) : null,
+            currentPrice: parseFloat(startingPrice),
+            endsAt: endDate,
+            increment
+        }
+    } );
 
     const files = req.files && req.files.images ? req.files.images : null;
     if (files) {
@@ -251,6 +277,10 @@ app.post('/posts', requireAuth, async (req, res) => {
 
     res.redirect('/posts');
 })
+
+// bid
+// app.get()
+
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
