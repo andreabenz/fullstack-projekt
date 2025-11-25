@@ -157,6 +157,7 @@ app.post('/logout', (req, res) => {
 app.get('/posts', async (req, res) => {
     const filters = req.query.filter;
     const filterList = Array.isArray(filters) ? filters : filters ? [filters] : [];
+
     let posts;
 
     if (filterList.length === 0) {
@@ -182,7 +183,8 @@ app.get('/posts', async (req, res) => {
             M_bel: 'Möbel'
         },
         sidebar: true,
-        selectedFilters: filterList
+        selectedFilters: filterList,
+        layout: req.xhr ? false : 'layout'
     });
 });
 
