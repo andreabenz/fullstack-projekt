@@ -193,7 +193,11 @@ app.get('/posts/view/:id', async (req, res) => {
     const id = Number(req.params.id);
     const post = await prisma.post.findUnique({
         where: {id},
-        include: {images: true}
+        include: {
+            images: true,
+            User: true,
+            bids: true
+        }
     });
     if (!post) return res.status(404).send('Post not found');
     res.render('posts/view', {
