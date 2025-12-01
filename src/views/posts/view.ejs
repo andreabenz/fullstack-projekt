@@ -29,34 +29,77 @@
                 <% } %>
             </div>
             <div class="w-full pt-3 border-b-1 border-gray-300 pb-3">
-                <div>
-                    <p class=" text-xs text-gray-500">Nächstes Gebot:</p>
-                    <p class="text-3xl font-semibold text-gray-900 py-2 mb-1.5"> CHF <%= parseFloat(post.currentPrice).toFixed(2) %> </p>
-                </div>
-                <a href="/posts/view/:id/bid" class="rounded-md bg-blue-600 flex items-center justify-center py-1.75 text-md font-semibold text-white shadow-sm hover:bg-blue-500">
-                    Bieten
-                </a>
-                <p class="mt-2 text-xs text-gray-500">
-                    Endet am <%= new Date(post.endsAt).toLocaleString('de-DE', {
-                        year: "numeric",
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    }) %>
-                </p>
+                <% if (!hasEnded) { %>
+
+                    <div>
+                        <p class="text-xs text-gray-500">Nächstes Gebot:</p>
+                        <p class="text-3xl font-semibold text-gray-900 py-2 mb-1.5">
+                            CHF <%= parseFloat(nextBid).toFixed(2) %>
+                        </p>
+                    </div>
+
+                    <form action="/posts/bid/<%= post.id %>" method="post">
+                        <button type="submit"
+                                class="rounded-md w-full bg-blue-600 flex items-center justify-center py-1.75 text-md font-semibold text-white shadow-sm hover:bg-blue-500 cursor-pointer">
+                            Bieten
+                        </button>
+                    </form>
+
+                    <p class="mt-2 text-xs text-gray-500">
+                        Endet am:
+                        <%= new Date(post.endsAt).toLocaleString('de-DE', {
+                            year: "numeric",
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        }) %>
+                    </p>
+
+                <% } else { %>
+
+                    <!-- Auction ended: Sold info -->
+                    <p class="mt-2 text-xs text-gray-500">
+                        Verkauft am:
+                        <%= new Date(post.endsAt).toLocaleString('de-DE', {
+                            year: "numeric",
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        }) %>
+                    </p>
+
+                    <div class="my-2">
+                        <p class="text-xs text-gray-500 mt-3">Verkaufspreis:</p>
+                        <p class="text-3xl font-semibold text-gray-900 py-2 mb-1.5">
+                            CHF <%= parseFloat(post.currentPrice).toFixed(2) %>
+                        </p>
+                    </div>
+
+                <% } %>
+
+                <% if (typeof error !== 'undefined') { %>
+                    <div class="mb-4 mt-2 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                        <%= error %>
+                    </div>
+                <% } %>
             </div>
-            <% if (post.buyNowPrice) {%>
+            <% if (post.buyNowPrice && !hasEnded) { %>
                 <div class="w-full pt-3 border-b-1 border-gray-300 pb-3">
                     <div>
-                        <p class=" text-xs text-gray-500">Sofort Kaufen:</p>
-                        <p class="text-3xl font-semibold text-gray-900 py-2 mb-1.5"> CHF <%= parseFloat(post.buyNowPrice).toFixed(2) %> </p>
+                        <p class="text-xs text-gray-500">Sofort Kaufen:</p>
+                        <p class="text-3xl font-semibold text-gray-900 py-2 mb-1.5">
+                            CHF <%= parseFloat(post.buyNowPrice).toFixed(2) %>
+                        </p>
                     </div>
-                    <a href="/posts/view/:id/bid" class="rounded-md bg-blue-400 flex items-center justify-center py-1.75 text-md font-semibold text-white shadow-sm hover:bg-blue-500">
+
+                    <a href="/posts/buy/<%= post.id %>"
+                       class="rounded-md bg-blue-400 flex items-center justify-center py-1.75 text-md font-semibold text-white shadow-sm hover:bg-blue-300">
                         Jetzt kaufen
                     </a>
                 </div>
-            <% }%>
+            <% } %>
             <div class="w-full pt-3">
                 <p class="text-l font-semibold text-gray-900 mb-3">Verkäufer*in: </p>
                 <div class="w-full flex flex-row items-center gap-2">
@@ -72,7 +115,7 @@
             </div>
         </div>
 
-        <div class="sm:w-2/3">
+        <div class="sm:w-2/3 z-0">
             <div class="swiper sm:w-5/6 w-full max-w-xl overflow-hidden">
                 <div class="swiper-wrapper !h-auto">
                     <% if (post.images && post.images.length) { %>

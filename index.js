@@ -200,8 +200,30 @@ app.get('/posts/view/:id', async (req, res) => {
         }
     });
     if (!post) return res.status(404).send('Post not found');
+
+    const now = new Date();
+    const hasEnded = post.endsAt && post.endsAt < now;
+
+    const INCREMENT_VALUES = {
+        ONE: 1,
+        FIVE: 5,
+        TEN: 10,
+        FIFTY: 50,
+        HUNDRED: 100,
+        FIVEHUNDRED: 500,
+        THOUSAND: 1000
+    }
+    const increment = INCREMENT_VALUES[post.increment];
+    const isFirstBid = post.currentPrice === null;
+    const currentBid = isFirstBid ? null : post.currentPrice;
+    const nextBid = isFirstBid ? post.startingPrice : post.currentPrice + increment;
+
     res.render('posts/view', {
-        post, CATEGORY_LABELS: {
+        post,
+        hasEnded,
+        currentBid,
+        nextBid,
+        CATEGORY_LABELS: {
             Kleider_Accessoires: 'Kleider/Accessoires',
             M_bel: 'Möbel'
         }
@@ -237,7 +259,7 @@ app.post('/posts', requireAuth, async (req, res) => {
         return res.status(400).send('Ungültige Kategorie');
     }
 
-    if (!Object.values(categories).includes(category)) {
+    if (!Object.values(increments).includes(increment)) {
         return res.status(400).send('Ungültiges Inkrement')
     }
 
@@ -250,7 +272,6 @@ app.post('/posts', requireAuth, async (req, res) => {
             startingPrice: parseFloat(startingPrice),
             userId: req.session.userId,
             buyNowPrice: buyNowPrice ? parseFloat(buyNowPrice) : null,
-            currentPrice: parseFloat(startingPrice),
             endsAt: endDate,
             increment
         }
@@ -285,8 +306,68 @@ app.post('/posts', requireAuth, async (req, res) => {
 })
 
 // bid
-// app.get()
+app.post('/posts/bid/:id', requireAuth, async (req, res) => {
+    const  postId = Number(req.params.id);
+    const userId = Number(req.session.userId);
+    const post = await prisma.post.findUnique({
+        where: { id: postId },
+        include: {
+            images: true,
+            User: true,
+            bids: { orderBy: { createdAt: 'desc' } }
+        }
+    });
 
+    const now = new Date();
+    const hasEnded = post.endsAt && post.endsAt < now;
+
+    if (post.userId === userId) {
+        return res.render('posts/view', {
+            post,
+            hasEnded,
+            CATEGORY_LABELS: {
+                Kleider_Accessoires: 'Kleider/Accessoires',
+                M_bel: 'Möbel'
+            },
+            error: "Du kannst nicht auf dein eigenes Angebot bieten"
+        });
+    }
+
+    const INCREMENT_VALUES = {
+        ONE: 1,
+        FIVE: 5,
+        TEN: 10,
+        FIFTY: 50,
+        HUNDRED: 100,
+        FIVEHUNDRED: 500,
+        THOUSAND: 1000
+    }
+
+    const increment = INCREMENT_VALUES[post.increment];
+    const isFirstBid = post.currentPrice === null;
+    const newBidAmount = isFirstBid ? post.startingPrice : post.currentPrice + increment;
+
+    let newEndsAt = post.endsAt;
+    if (post.endsAt && post.endsAt - now <= 60000) {
+        newEndsAt = new Date(now.getTime() + 60000);
+    }
+
+    await prisma.$transaction([
+        prisma.bid.create({
+            data: { amount: newBidAmount, userId, postId }
+        }),
+        prisma.post.update({
+            where: { id: postId },
+            data: {
+                currentPrice: newBidAmount,
+                buyerId: userId,
+                endsAt: newEndsAt
+            }
+        })
+    ]);
+
+    res.redirect(`/posts/view/${postId}`);
+})
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
