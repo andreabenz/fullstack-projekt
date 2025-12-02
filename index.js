@@ -14,6 +14,16 @@ const prisma = new PrismaClient();
 
 const PORT = process.env.PORT || 3000;
 
+const INCREMENT_VALUES = {
+    ONE: 1,
+    FIVE: 5,
+    TEN: 10,
+    FIFTY: 50,
+    HUNDRED: 100,
+    FIVEHUNDRED: 500,
+    THOUSAND: 1000
+};
+
 // express setup
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'src/views'));
@@ -166,13 +176,13 @@ app.get('/posts', async (req, res) => {
         });
     }
     else {
-       posts = await prisma.post.findMany({
-           where: {
-               category: {
-                   in: filterList
-               }
-           }
-       });
+        posts = await prisma.post.findMany({
+            where: {
+                category: {
+                    in: filterList
+                }
+            }
+        });
 
     }
     res.render('posts/index', {
@@ -197,7 +207,7 @@ app.get('/posts/view/:id', async (req, res) => {
             images: true,
             User: true,
             bids: { orderBy: {
-                createdAt: "desc"
+                    createdAt: "desc"
                 },
                 include: {
                     User: true
@@ -220,22 +230,15 @@ app.get('/posts/view/:id', async (req, res) => {
         post.isSold = true;
     }
 
-    const INCREMENT_VALUES = {
-        ONE: 1,
-        FIVE: 5,
-        TEN: 10,
-        FIFTY: 50,
-        HUNDRED: 100,
-        FIVEHUNDRED: 500,
-        THOUSAND: 1000
-    }
-
     const increment = INCREMENT_VALUES[post.increment];
-    const isFirstBid = post.currentPrice === null;
-    const currentBid = isFirstBid ? null : post.currentPrice;
-    const nextBid = isFirstBid ? post.startingPrice : post.currentPrice + increment;
-
     const bidCount = post.bids.length;
+    const isFirstBid = bidCount === 0;
+
+    const currentBid = isFirstBid ? null : post.currentPrice;
+    const nextBid = isFirstBid ? post.startingPrice : (post.currentPrice ?? post.startingPrice) + increment;
+
+    const highestBid = post.bids[0];
+    const userHasHighestBid = !!(highestBid && req.session.userId && highestBid.userId === Number(req.session.userId));
 
     res.render('posts/view', {
         post,
@@ -243,6 +246,7 @@ app.get('/posts/view/:id', async (req, res) => {
         currentBid,
         nextBid,
         bidCount,
+        userHasHighestBid,
         CATEGORY_LABELS: {
             Kleider_Accessoires: 'Kleider/Accessoires',
             M_bel: 'Möbel'
@@ -327,14 +331,15 @@ app.post('/posts', requireAuth, async (req, res) => {
 
 // bid
 app.post('/posts/bid/:id', requireAuth, async (req, res) => {
-    const  postId = Number(req.params.id);
+    const postId = Number(req.params.id);
     const userId = Number(req.session.userId);
+
     const post = await prisma.post.findUnique({
         where: { id: postId },
         include: {
             images: true,
             User: true,
-            bids: { orderBy: { createdAt: 'desc' } }
+            bids: { orderBy: { createdAt: 'desc' }, include: { User: true } }
         }
     });
 
@@ -345,6 +350,10 @@ app.post('/posts/bid/:id', requireAuth, async (req, res) => {
         return res.render('posts/view', {
             post,
             hasEnded,
+            currentBid: post.currentPrice ?? null,
+            nextBid: (post.currentPrice ?? post.startingPrice) + INCREMENT_VALUES[post.increment],
+            bidCount: post.bids.length,
+            userHasHighestBid: false,
             CATEGORY_LABELS: {
                 Kleider_Accessoires: 'Kleider/Accessoires',
                 M_bel: 'Möbel'
@@ -353,14 +362,23 @@ app.post('/posts/bid/:id', requireAuth, async (req, res) => {
         });
     }
 
-    const INCREMENT_VALUES = {
-        ONE: 1,
-        FIVE: 5,
-        TEN: 10,
-        FIFTY: 50,
-        HUNDRED: 100,
-        FIVEHUNDRED: 500,
-        THOUSAND: 1000
+    const highestBid = post.bids[0];
+    const userHasHighestBid = !!(highestBid && highestBid.userId === userId);
+
+    if (userHasHighestBid) {
+        return res.render('posts/view', {
+            post,
+            hasEnded,
+            currentBid: post.currentPrice ?? null,
+            nextBid: (post.currentPrice ?? post.startingPrice) + INCREMENT_VALUES[post.increment],
+            bidCount: post.bids.length,
+            userHasHighestBid: true,
+            CATEGORY_LABELS: {
+                Kleider_Accessoires: 'Kleider/Accessoires',
+                M_bel: 'Möbel'
+            },
+            error: "Du hast bereits das höchste Gebot"
+        });
     }
 
     const increment = INCREMENT_VALUES[post.increment];
