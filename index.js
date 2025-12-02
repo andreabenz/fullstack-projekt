@@ -196,13 +196,29 @@ app.get('/posts/view/:id', async (req, res) => {
         include: {
             images: true,
             User: true,
-            bids: true
+            bids: { orderBy: {
+                createdAt: "desc"
+                },
+                include: {
+                    User: true
+                }
+            }
         }
     });
     if (!post) return res.status(404).send('Post not found');
 
     const now = new Date();
     const hasEnded = post.endsAt && post.endsAt < now;
+
+    if (hasEnded && post.buyerId && !post.isSold) {
+        await prisma.post.update({
+            where: { id: post.id },
+            data: {
+                isSold: true
+            }
+        });
+        post.isSold = true;
+    }
 
     const INCREMENT_VALUES = {
         ONE: 1,
@@ -213,16 +229,20 @@ app.get('/posts/view/:id', async (req, res) => {
         FIVEHUNDRED: 500,
         THOUSAND: 1000
     }
+
     const increment = INCREMENT_VALUES[post.increment];
     const isFirstBid = post.currentPrice === null;
     const currentBid = isFirstBid ? null : post.currentPrice;
     const nextBid = isFirstBid ? post.startingPrice : post.currentPrice + increment;
+
+    const bidCount = post.bids.length;
 
     res.render('posts/view', {
         post,
         hasEnded,
         currentBid,
         nextBid,
+        bidCount,
         CATEGORY_LABELS: {
             Kleider_Accessoires: 'Kleider/Accessoires',
             M_bel: 'Möbel'

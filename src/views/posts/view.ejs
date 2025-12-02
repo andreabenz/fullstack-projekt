@@ -46,6 +46,10 @@
                     </form>
 
                     <p class="mt-2 text-xs text-gray-500">
+                        <%= bidCount %> Gebot<%= bidCount !== 1 ? 'e' : '' %>
+                    </p>
+
+                    <p class="mt-1 text-xs text-gray-500">
                         Endet am:
                         <%= new Date(post.endsAt).toLocaleString('de-DE', {
                             year: "numeric",
@@ -55,10 +59,35 @@
                             minute: '2-digit'
                         }) %>
                     </p>
+                <% }  else if (!post.isSold && hasEnded) { %>
+                        <div>
+                            <p class="text-xs text-gray-500">Startpreis:</p>
+                            <p class="text-3xl font-semibold text-gray-900 py-2 mb-1.5">
+                                CHF <%= Number(post.startingPrice).toFixed(2) %>
+                            </p>
+                        </div>
+
+                        <button disabled
+                                class="rounded-md w-full bg-gray-300 text-gray-500 flex items-center justify-center py-1.75 text-md font-semibold shadow-sm cursor-not-allowed opacity-70">
+                            Bieten nicht möglich
+                        </button>
+
+                        <p class="text-red-600 font-bold text-lg mt-3 text-center">
+                            Nicht verkauft
+                        </p>
+
+                        <p class="mt-2 text-xs text-gray-500">
+                            Endete am:
+                            <%= new Date(post.endsAt).toLocaleString('de-DE', {
+                                year: "numeric",
+                                month: '2-digit',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            }) %>
+                        </p>
 
                 <% } else { %>
-
-                    <!-- Auction ended: Sold info -->
                     <p class="mt-2 text-xs text-gray-500">
                         Verkauft am:
                         <%= new Date(post.endsAt).toLocaleString('de-DE', {
@@ -143,6 +172,42 @@
                 </div>
             </div>
 
+            <div class="sm:w-5/6 mx-auto mt-4">
+                <div class="p-3 rounded-md border-gray-400 shadow-sm">
+                    <p class="text-sm font-semibold text-gray-600 mb-2 italic">Gebotsverlauf:</p>
+
+                    <% if (bidCount === 0) { %>
+                        <p class="text-gray-500 text-sm">Noch keine Gebote vorhanden.</p>
+
+                    <% } else { %>
+                        <ul class="space-y-2">
+                            <% post.bids.forEach(bid => { %>
+                                <li class="flex justify-between items-center text-gray-700">
+                        <span class="font-medium">
+                            <% function mask(name) {
+                                if (!name || name.length < 2) return '*****';
+                                return name[0] + '****' + name[name.length - 1];
+                            } %>
+                            <%= mask(bid.User?.username) %>
+                        </span>
+                        <span class="text-sm text-gray-500">
+                            <%= new Date(bid.createdAt).toLocaleString('de-DE', {
+                                year: "2-digit",
+                                month: '2-digit',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            }) %>
+                        </span>
+                        <span class="font-semibold">
+                            CHF <%= bid.amount.toFixed(2) %>
+                        </span>
+                                </li>
+                            <% }) %>
+                        </ul>
+                    <% } %>
+                </div>
+            </div>
 
         </div>
     </div>
