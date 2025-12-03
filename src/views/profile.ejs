@@ -16,8 +16,8 @@
                 <% biddingOn.forEach(post => { %>
                     <div class="px-2 w-full sm:w-1/2 my-2">
                         <div class="p-4 bg-white rounded-lg shadow-sm ring-1 ring-gray-200 flex space-x-4">
-                            <a href="/posts/view/<%= post.id %>"
-                               class="w-24 h-20 overflow-hidden rounded-md bg-gray-100 flex-shrink-0">
+
+                            <a href="/posts/view/<%= post.id %>" class="w-24 h-20 overflow-hidden rounded-md bg-gray-100 flex-shrink-0">
                                 <% if (post.images?.length > 0) { %>
                                     <img src="<%= post.images[0].path %>" class="w-full h-full object-cover"/>
                                 <% } else { %>
@@ -27,41 +27,43 @@
                                 <% } %>
                             </a>
 
-                            <div class="flex-1">
-                                <a href="/posts/view/<%= post.id %>"
-                                   class="font-semibold text-gray-900 hover:underline break-words">
-                                    <%= post.title || 'Ohne Titel' %>
-                                </a>
+                            <div class="flex-1 flex flex-col justify-between">
+                                <div>
 
-                                <p class="text-xs text-gray-500 mt-1">
-                                    <%= CATEGORY_LABELS[post.category] || post.category || '—' %> · Endet:
-                                    <%= new Date(post.endsAt).toLocaleString('de-DE', {
-                                        year: "numeric",
-                                        month: '2-digit',
-                                        day: '2-digit',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                    }) %>
-                                </p>
+                                    <a href="/posts/view/<%= post.id %>" class="font-semibold text-gray-900 hover:underline break-words text-lg">
+                                        <%= post.title || 'Ohne Titel' %>
+                                    </a>
 
-                                <% const latestBid = post.bids[0]; %>
-                                <% const userIsHighest = latestBid && currentUser && latestBid.userId === currentUser.id; %>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        <%= CATEGORY_LABELS[post.category] || post.category || '—' %> · Endet am
+                                        <%= post.endsAt ? new Date(post.endsAt).toLocaleString('de-DE', {
+                                            year: "numeric",
+                                            month: '2-digit',
+                                            day: '2-digit',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        }) : '—' %>
+                                    </p>
+                                </div>
 
-                                <% if (userIsHighest) { %>
-                                    <div class="flex items-center gap-3 mt-2">
-                                <span class="inline-block text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">
-                                    Du führst
-                                </span>
+                                <div class="flex items-center gap-3 mt-2">
+                                    <% const latestBid = post.bids[0]; %>
+                                    <% const userIsHighest = latestBid && currentUser && latestBid.userId === currentUser.id; %>
+
+                                    <% if (userIsHighest) { %>
+                                        <span class="inline-block text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">
+                                            Du führst
+                                        </span>
 
                                         <span class="text-xs text-gray-900 font-semibold">
-                                    Momentanes Gebot: CHF <%= post.currentPrice ? parseFloat(post.currentPrice).toFixed(2) : '-' %>
-                                </span>
-                                    </div>
-                                <% } else if (latestBid) { %>
-                                    <span class="inline-block text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700 mt-2">
-                                CHF <%= parseFloat(latestBid.amount).toFixed(2) %>
-                            </span>
-                                <% } %>
+                                            Momentanes Gebot: CHF <%= post.currentPrice ? parseFloat(post.currentPrice).toFixed(2) : '-' %>
+                                        </span>
+                                    <% } else if (latestBid) { %>
+                                        <span class="inline-block text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">
+                                            CHF <%= parseFloat(latestBid.amount).toFixed(2) %>
+                                        </span>
+                                    <% } %>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -79,8 +81,8 @@
                     <% bought.forEach(post => { %>
                         <div class="px-2 w-full sm:w-1/2 my-2">
                             <div class="p-4 bg-white rounded-lg shadow-sm ring-1 ring-gray-200 flex space-x-4">
-                                <a href="/posts/view/<%= post.id %>"
-                                   class="w-24 h-20 overflow-hidden rounded-md bg-gray-100 flex-shrink-0">
+
+                                <a href="/posts/view/<%= post.id %>" class="w-24 h-20 overflow-hidden rounded-md bg-gray-100 flex-shrink-0">
                                     <% if (post.images?.length > 0) { %>
                                         <img src="<%= post.images[0].path %>" class="w-full h-full object-cover"/>
                                     <% } else { %>
@@ -90,22 +92,24 @@
                                     <% } %>
                                 </a>
 
-                                <div class="flex-1">
-                                    <a href="/posts/view/<%= post.id %>"
-                                       class="font-semibold text-gray-900 hover:underline break-words">
-                                        <%= post.title %>
-                                    </a>
+                                <div class="flex-1 flex flex-col justify-between">
+                                    <div>
+                                        <a href="/posts/view/<%= post.id %>" class="font-semibold text-gray-900 hover:underline break-words text-lg">
+                                            <%= post.title %>
+                                        </a>
 
-                                    <p class="text-xs text-gray-500 mt-1">
-                                        <%= CATEGORY_LABELS[post.category] || post.category %> · Kaufdatum:
-                                        <%= new Date(post.endsAt).toLocaleString('de-DE', {
-                                            year: "numeric",
-                                            month: '2-digit',
-                                            day: '2-digit',
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        }) %>
-                                    </p>
+                                        <!-- Kategorie + Kaufdatum -->
+                                        <p class="text-xs text-gray-500 mt-1">
+                                            <%= CATEGORY_LABELS[post.category] || post.category %> · Kaufdatum:
+                                            <%= post.endsAt ? new Date(post.endsAt).toLocaleString('de-DE', {
+                                                year: "numeric",
+                                                month: '2-digit',
+                                                day: '2-digit',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            }) : '—' %>
+                                        </p>
+                                    </div>
 
                                     <div class="flex items-center gap-3 mt-2">
                                         <span class="inline-block text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">Gekauft</span>
@@ -113,7 +117,6 @@
                                         <span class="text-xs text-gray-900 font-semibold">Kaufpreis: CHF <%= post.currentPrice ? parseFloat(post.currentPrice).toFixed(2) : '-' %></span>
                                     </div>
                                 </div>
-
                             </div>
                         </div>
                     <% }) %>
@@ -131,8 +134,8 @@
                     <% selling.forEach(post => { %>
                         <div class="px-2 w-full sm:w-1/2 my-2">
                             <div class="p-4 bg-white rounded-lg shadow-sm ring-1 ring-gray-200 flex space-x-4">
-                                <a href="/posts/view/<%= post.id %>"
-                                   class="w-24 h-20 overflow-hidden rounded-md bg-gray-100 flex-shrink-0">
+                                <!-- Bild links -->
+                                <a href="/posts/view/<%= post.id %>" class="w-24 h-20 overflow-hidden rounded-md bg-gray-100 flex-shrink-0">
                                     <% if (post.images?.length > 0) { %>
                                         <img src="<%= post.images[0].path %>" class="w-full h-full object-cover"/>
                                     <% } else { %>
@@ -142,32 +145,41 @@
                                     <% } %>
                                 </a>
 
-                                <div class="flex-1">
-                                    <a href="/posts/view/<%= post.id %>"
-                                       class="font-semibold text-gray-900 hover:underline break-words">
-                                        <%= post.title %>
-                                    </a>
+                                <div class="flex-1 flex flex-col justify-between">
+                                    <div>
+                                        <a href="/posts/view/<%= post.id %>" class="font-semibold text-gray-900 hover:underline break-words text-lg">
+                                            <%= post.title %>
+                                        </a>
 
-                                    <p class="text-xs text-gray-500 mt-1">
-                                        Startpreis:
-                                        CHF <%= parseFloat(post.startingPrice).toFixed(2) %>
-                                    </p>
+                                        <p class="text-xs text-gray-500 mt-1">
+                                            <%= CATEGORY_LABELS[post.category] || post.category %> · Endet am
+                                            <%= post.endsAt ? new Date(post.endsAt).toLocaleString('de-DE', {
+                                                year: 'numeric',
+                                                month: '2-digit',
+                                                day: '2-digit',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            }) : '—' %>
+                                        </p>
+                                    </div>
 
-                                    <% const hasEnded = post.endsAt && new Date(post.endsAt) < new Date(); %>
+                                    <div class="flex items-center gap-3 mt-2">
+                                        <% const hasEnded = post.endsAt && new Date(post.endsAt) < new Date(); %>
 
-                                    <% if (post.isSold || post.buyerId) { %>
-                                        <span class="inline-block text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700 mt-2">Verkauft</span>
-                                    <% } else if (hasEnded) { %>
-                                        <span class="inline-block text-xs px-2 py-1 rounded-full bg-red-100 text-red-800 mt-2">Nicht verkauft</span>
-                                        <% if (currentUser && post.userId === currentUser.id) { %>
-                                            <a href="/posts/<%= post.id %>/repost" class="ml-2 inline-flex items-center rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50">Erneut hochladen</a>
+                                        <% if (post.isSold || post.buyerId) { %>
+                                            <span class="inline-block text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">Verkauft</span>
+                                        <% } else if (hasEnded) { %>
+                                            <span class="inline-block text-xs px-2 py-1 rounded-full bg-red-100 text-red-800">Nicht verkauft</span>
+                                            <% if (currentUser && post.userId === currentUser.id) { %>
+                                                <a href="/posts/<%= post.id %>/repost" class="inline-flex items-center rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50">Erneut hochladen</a>
+                                            <% } %>
+                                        <% } else { %>
+                                            <span class="inline-block text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800">Aktiv</span>
+                                            <% if (currentUser && post.userId === currentUser.id) { %>
+                                                <a href="/posts/<%= post.id %>/edit" class="inline-flex items-center rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50">Bearbeiten</a>
+                                            <% } %>
                                         <% } %>
-                                    <% } else { %>
-                                        <span class="inline-block text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 mt-2">Aktiv</span>
-                                        <% if (currentUser && post.userId === currentUser.id) { %>
-                                            <a href="/posts/<%= post.id %>/edit" class="ml-2 inline-flex items-center rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50">Bearbeiten</a>
-                                        <% } %>
-                                    <% } %>
+                                    </div>
                                 </div>
                             </div>
                         </div>
