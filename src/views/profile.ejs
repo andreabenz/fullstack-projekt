@@ -9,7 +9,7 @@
     </header>
 
     <section>
-        <h2 class="text-xl font-medium mb-3">Angebote, auf die du geboten hast</h2>
+        <h2 class="text-xl font-medium mt-3 mb-1">Angebote, auf die du geboten hast</h2>
 
         <% if (biddingOn && biddingOn.length > 0) { %>
             <div class="flex flex-wrap -mx-2">
@@ -72,7 +72,7 @@
         <% } %>
 
         <section>
-            <h2 class="text-xl font-medium mb-3">Gekaufte Angebote</h2>
+            <h2 class="text-xl font-medium mt-3 mb-1">Gekaufte Angebote</h2>
 
             <% if (bought && bought.length > 0) { %>
                 <div class="flex flex-wrap -mx-2">
@@ -124,7 +124,7 @@
         </section>
 
         <section>
-            <h2 class="text-xl font-medium mb-3">Deine Angebote</h2>
+            <h2 class="text-xl font-medium mt-3 mb-1">Deine Angebote</h2>
 
             <% if (selling && selling.length > 0) { %>
                 <div class="flex flex-wrap -mx-2">
@@ -159,6 +159,9 @@
                                         <span class="inline-block text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700 mt-2">Verkauft</span>
                                     <% } else if (hasEnded) { %>
                                         <span class="inline-block text-xs px-2 py-1 rounded-full bg-red-100 text-red-800 mt-2">Nicht verkauft</span>
+                                        <% if (currentUser && post.userId === currentUser.id) { %>
+                                            <a href="/posts/<%= post.id %>/repost" class="ml-2 inline-flex items-center rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50">Erneut hochladen</a>
+                                        <% } %>
                                     <% } else { %>
                                         <span class="inline-block text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 mt-2">Aktiv</span>
                                         <% if (currentUser && post.userId === currentUser.id) { %>

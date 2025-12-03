@@ -168,23 +168,32 @@ app.get('/posts', async (req, res) => {
     const filters = req.query.filter;
     const filterList = Array.isArray(filters) ? filters : filters ? [filters] : [];
 
-    let posts;
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7*24*60*60*1000);
 
+    let posts;
     if (filterList.length === 0) {
         posts = await prisma.post.findMany({
-            orderBy: {createdAt: 'desc'}
+            where: {
+                OR: [
+                    { endsAt: null },
+                    { endsAt: { gt: oneWeekAgo } }
+                ]
+            },
+            orderBy: { createdAt: 'desc' }
         });
-    }
-    else {
+    } else {
         posts = await prisma.post.findMany({
             where: {
-                category: {
-                    in: filterList
-                }
+                category: { in: filterList },
+                OR: [
+                    { endsAt: null },
+                    { endsAt: { gt: oneWeekAgo } }
+                ]
             }
         });
-
     }
+
     res.render('posts/index', {
         posts,
         categories: Object.values(categories),
@@ -553,6 +562,84 @@ app.post('/posts/:id', requireAuth, async (req, res) => {
                 data: { updatedAt: new Date() }
             });
         }
+    }
+
+    res.redirect('/profile');
+});
+
+// repost page
+app.get('/posts/:id/repost', requireAuth, async (req, res) => {
+    const id = Number(req.params.id);
+    const userId = Number(req.session.userId);
+    const now = new Date();
+
+    const post = await prisma.post.findUnique({ where: { id }, include: { images: true } });
+    if (!post) return res.status(404).send('Beitrag nicht gefunden');
+    if (post.userId !== userId) return res.status(403).send('Nicht berechtigt');
+
+    const hasEnded = post.endsAt && post.endsAt < now;
+    if (!hasEnded || post.isSold) return res.status(400).send('Nur abgelaufene, nicht verkaufte Beiträge können erneut hochgeladen werden');
+
+    res.render('posts/repost', {
+        post,
+        categories: Object.values(categories),
+        increments: Object.values(increments),
+        INCREMENT_VALUES,
+        CATEGORY_LABELS: { Kleider_Accessoires: 'Kleider/Accessoires', M_bel: 'Möbel' }
+    });
+});
+
+// repost
+app.post('/posts/:id/repost', requireAuth, async (req, res) => {
+    const id = Number(req.params.id);
+    const userId = Number(req.session.userId);
+    const { title, description, category, startingPrice, buyNowPrice, increment } = req.body;
+
+    const post = await prisma.post.findUnique({ where: { id } });
+    if (!post) return res.status(404).send('Beitrag nicht gefunden');
+    if (post.userId !== userId) return res.status(403).send('Nicht berechtigt');
+
+    const now = new Date();
+    const hasEnded = post.endsAt && post.endsAt < now;
+    if (!hasEnded || post.isSold) return res.status(400).send('Nur abgelaufene, nicht verkaufte Beiträge können erneut hochgeladen werden');
+
+    const newEndsAt = new Date();
+    newEndsAt.setDate(now.getDate() + 10);
+
+    await prisma.post.update({
+        where: { id },
+        data: {
+            title,
+            description,
+            category,
+            startingPrice: parseFloat(startingPrice),
+            buyNowPrice: buyNowPrice ? parseFloat(buyNowPrice) : null,
+            increment,
+            createdAt: now,
+            updatedAt: now,
+            endsAt: newEndsAt,
+            isSold: false,
+            currentPrice: null,
+            buyerId: null
+        }
+    });
+
+    const files = req.files && req.files.images ? (Array.isArray(req.files.images) ? req.files.images : [req.files.images]) : [];
+    if (files.length > 0) {
+        const postFolder = path.join(__dirname, 'uploads', 'posts', String(post.id));
+        await fs.mkdir(postFolder, { recursive: true });
+
+        const imageData = [];
+        for (const file of files) {
+            if (!file.mimetype.startsWith('image/')) continue;
+            const ext = path.extname(file.name);
+            const filename = `${uuidv4()}${ext}`;
+            const destPath = path.join(postFolder, filename);
+            await file.mv(destPath);
+            const publicPath = path.posix.join('/uploads', 'posts', String(post.id), filename);
+            imageData.push({ path: publicPath, postId: post.id });
+        }
+        if (imageData.length > 0) await prisma.image.createMany({ data: imageData });
     }
 
     res.redirect('/profile');
