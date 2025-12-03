@@ -168,23 +168,32 @@ app.get('/posts', async (req, res) => {
     const filters = req.query.filter;
     const filterList = Array.isArray(filters) ? filters : filters ? [filters] : [];
 
-    let posts;
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7*24*60*60*1000);
 
+    let posts;
     if (filterList.length === 0) {
         posts = await prisma.post.findMany({
-            orderBy: {createdAt: 'desc'}
+            where: {
+                OR: [
+                    { endsAt: null },
+                    { endsAt: { gt: oneWeekAgo } }
+                ]
+            },
+            orderBy: { createdAt: 'desc' }
         });
-    }
-    else {
+    } else {
         posts = await prisma.post.findMany({
             where: {
-                category: {
-                    in: filterList
-                }
+                category: { in: filterList },
+                OR: [
+                    { endsAt: null },
+                    { endsAt: { gt: oneWeekAgo } }
+                ]
             }
         });
-
     }
+
     res.render('posts/index', {
         posts,
         categories: Object.values(categories),
@@ -466,6 +475,250 @@ app.get('/profile', requireAuth, async (req, res) => {
     });
 });
 
+// edit page
+app.get('/posts/:id/edit', requireAuth, async (req, res) => {
+    const id = Number(req.params.id);
+    const userId = Number(req.session.userId);
+    const now = new Date();
+
+    const post = await prisma.post.findUnique({
+        where: { id },
+        include: {
+            images: true
+        }
+    });
+
+    if (!post) return res.status(404).send('Beitrag nicht gefunden');
+
+    // only owner can edit
+    if (post.userId !== userId) {
+        return res.status(403).send('Nicht berechtigt');
+    }
+
+    // only editable if active (not sold and not ended)
+    const hasEnded = post.endsAt && post.endsAt < now;
+    if (post.isSold || hasEnded) {
+        return res.status(400).send('Dieser Beitrag kann nicht mehr bearbeitet werden');
+    }
+
+    res.render('posts/edit', {
+        post,
+        categories: Object.values(categories),
+        CATEGORY_LABELS: {
+            Kleider_Accessoires: 'Kleider/Accessoires',
+            M_bel: 'Möbel'
+        }
+    });
+});
+
+// update post
+app.post('/posts/:id', requireAuth, async (req, res) => {
+    const id = Number(req.params.id);
+    const { title, description, category } = req.body;
+    const now = new Date();
+
+    const hasEnded = post.endsAt && post.endsAt < now;
+    if (post.isSold || hasEnded) {
+        return res.status(400).send('Dieser Beitrag kann nicht mehr bearbeitet werden');
+    }
+
+    if (category && !Object.values(categories).includes(category)) {
+        return res.status(400).send('Ungültige Kategorie');
+    }
+
+    await prisma.post.update({
+        where: { id },
+        data: {
+            title,
+            description,
+            category,
+            updatedAt: new Date()
+        }
+    });
+
+    const files = req.files && req.files.images ? req.files.images : null;
+    if (files) {
+        const filesArray = Array.isArray(files) ? files : [files];
+        const postFolder = path.join(__dirname, 'uploads', 'posts', String(id));
+        await fs.mkdir(postFolder, { recursive: true });
+
+        const imageData = [];
+
+        for (const file of filesArray) {
+            if (!file.mimetype.startsWith('image/')) continue;
+            const ext = path.extname(file.name);
+            const filename = `${uuidv4()}${ext}`;
+            const destPath = path.join(postFolder, filename);
+            await file.mv(destPath);
+
+            const publicPath = path.posix.join('/uploads', 'posts', String(id), filename);
+            imageData.push({ path: publicPath, postId: id });
+        }
+
+        if (imageData.length > 0) {
+            await prisma.image.createMany({ data: imageData });
+            await prisma.post.update({
+                where: { id },
+                data: { updatedAt: new Date() }
+            });
+        }
+    }
+
+    res.redirect('/profile');
+});
+
+// repost page
+app.get('/posts/:id/repost', requireAuth, async (req, res) => {
+    const id = Number(req.params.id);
+    const userId = Number(req.session.userId);
+    const now = new Date();
+
+    const post = await prisma.post.findUnique({ where: { id }, include: { images: true } });
+    if (!post) return res.status(404).send('Beitrag nicht gefunden');
+    if (post.userId !== userId) return res.status(403).send('Nicht berechtigt');
+
+    const hasEnded = post.endsAt && post.endsAt < now;
+    if (!hasEnded || post.isSold) return res.status(400).send('Nur abgelaufene, nicht verkaufte Beiträge können erneut hochgeladen werden');
+
+    res.render('posts/repost', {
+        post,
+        categories: Object.values(categories),
+        increments: Object.values(increments),
+        INCREMENT_VALUES,
+        CATEGORY_LABELS: { Kleider_Accessoires: 'Kleider/Accessoires', M_bel: 'Möbel' }
+    });
+});
+
+// repost
+app.post('/posts/:id/repost', requireAuth, async (req, res) => {
+    const id = Number(req.params.id);
+    const userId = Number(req.session.userId);
+    const { title, description, category, startingPrice, buyNowPrice, increment } = req.body;
+
+    const post = await prisma.post.findUnique({ where: { id } });
+    if (!post) return res.status(404).send('Beitrag nicht gefunden');
+    if (post.userId !== userId) return res.status(403).send('Nicht berechtigt');
+
+    const now = new Date();
+    const hasEnded = post.endsAt && post.endsAt < now;
+    if (!hasEnded || post.isSold) return res.status(400).send('Nur abgelaufene, nicht verkaufte Beiträge können erneut hochgeladen werden');
+
+    const newEndsAt = new Date();
+    newEndsAt.setDate(now.getDate() + 10);
+
+    await prisma.post.update({
+        where: { id },
+        data: {
+            title,
+            description,
+            category,
+            startingPrice: parseFloat(startingPrice),
+            buyNowPrice: buyNowPrice ? parseFloat(buyNowPrice) : null,
+            increment,
+            createdAt: now,
+            updatedAt: now,
+            endsAt: newEndsAt,
+            isSold: false,
+            currentPrice: null,
+            buyerId: null
+        }
+    });
+
+    const files = req.files && req.files.images ? (Array.isArray(req.files.images) ? req.files.images : [req.files.images]) : [];
+    if (files.length > 0) {
+        const postFolder = path.join(__dirname, 'uploads', 'posts', String(post.id));
+        await fs.mkdir(postFolder, { recursive: true });
+
+        const imageData = [];
+        for (const file of files) {
+            if (!file.mimetype.startsWith('image/')) continue;
+            const ext = path.extname(file.name);
+            const filename = `${uuidv4()}${ext}`;
+            const destPath = path.join(postFolder, filename);
+            await file.mv(destPath);
+            const publicPath = path.posix.join('/uploads', 'posts', String(post.id), filename);
+            imageData.push({ path: publicPath, postId: post.id });
+        }
+        if (imageData.length > 0) await prisma.image.createMany({ data: imageData });
+    }
+
+    res.redirect('/profile');
+});
+
+
+// Bezahlprozess
+// 1) Käufer bestätigt Zahlung
+app.post('/posts/:id/confirm-payment', requireAuth, async (req, res) => {
+    const id = Number(req.params.id);
+    const userId = Number(req.session.userId);
+
+    const post = await prisma.post.findUnique({ where: { id }, select: { buyerId: true, transactionStatus: true } });
+    if (!post) return res.status(404).send('Beitrag nicht gefunden');
+    if (post.buyerId !== userId) return res.status(403).send('Nur der Käufer kann die Zahlung bestätigen');
+
+    if (post.transactionStatus !== 'PENDING') {
+        return res.redirect(`/posts/view/${id}`);
+    }
+
+    await prisma.post.update({
+        where: { id },
+        data: {
+            transactionStatus: 'PAYMENT_CONFIRMED_BY_BUYER',
+            transactionUpdatedAt: new Date()
+        }
+    });
+
+    res.redirect(`/posts/view/${id}`);
+});
+
+// 2) Verkäufer bestätigt Zahlung erhalten & Versand
+app.post('/posts/:id/confirm-payment-received-and-shipped', requireAuth, async (req, res) => {
+    const id = Number(req.params.id);
+    const userId = Number(req.session.userId);
+
+    const post = await prisma.post.findUnique({ where: { id }, select: { userId: true, transactionStatus: true } });
+    if (!post) return res.status(404).send('Beitrag nicht gefunden');
+    if (post.userId !== userId) return res.status(403).send('Nur der Verkäufer kann diese Aktion ausführen');
+
+    if (post.transactionStatus !== 'PAYMENT_CONFIRMED_BY_BUYER') {
+        return res.redirect(`/posts/view/${id}`);
+    }
+
+    await prisma.post.update({
+        where: { id },
+        data: {
+            transactionStatus: 'PAYMENT_RECEIVED_AND_SHIPPED',
+            transactionUpdatedAt: new Date()
+        }
+    });
+
+    res.redirect(`/posts/view/${id}`);
+});
+
+// 3) Käufer bestätigt Erhalt -> Transaktion abschliessen
+app.post('/posts/:id/confirm-received', requireAuth, async (req, res) => {
+    const id = Number(req.params.id);
+    const userId = Number(req.session.userId);
+
+    const post = await prisma.post.findUnique({ where: { id }, select: { buyerId: true, transactionStatus: true } });
+    if (!post) return res.status(404).send('Beitrag nicht gefunden');
+    if (post.buyerId !== userId) return res.status(403).send('Nur der Käufer kann den Erhalt bestätigen');
+
+    if (post.transactionStatus !== 'PAYMENT_RECEIVED_AND_SHIPPED') {
+        return res.redirect(`/posts/view/${id}`);
+    }
+
+    await prisma.post.update({
+        where: { id },
+        data: {
+            transactionStatus: 'RECEIVED_CONFIRMED',
+            transactionUpdatedAt: new Date(),
+            isSold: true
+        }
+    });
+
+    res.redirect(`/posts/view/${id}`);
+});
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
