@@ -21,24 +21,26 @@ model User {
 }
 
 model Post {
-  id            Int         @id @default(autoincrement())
-  title         String?     @db.VarChar(50)
-  category      categories?
-  description   String?
-  createdAt     DateTime?   @default(now())
-  updatedAt     DateTime?
-  userId        Int?
-  buyNowPrice   Float?
-  currentPrice  Float?
-  isSold        Boolean     @default(false)
-  startingPrice Float
-  buyerId       Int?
-  endsAt        DateTime?
-  increment     increments?
-  bids          Bid[]
-  images        Image[]
-  buyer         User?       @relation("Buyer", fields: [buyerId], references: [id])
-  User          User?       @relation(fields: [userId], references: [id])
+  id                   Int               @id @default(autoincrement())
+  title                String?           @db.VarChar(50)
+  category             categories?
+  description          String?
+  createdAt            DateTime?         @default(now())
+  updatedAt            DateTime?
+  userId               Int?
+  buyNowPrice          Float?
+  currentPrice         Float?
+  isSold               Boolean           @default(false)
+  startingPrice        Float
+  buyerId              Int?
+  endsAt               DateTime?
+  increment            increments?
+  transactionStatus    TransactionStatus @default(PENDING)
+  transactionUpdatedAt DateTime?
+  bids                 Bid[]
+  images               Image[]
+  buyer                User?             @relation("Buyer", fields: [buyerId], references: [id])
+  User                 User?             @relation(fields: [userId], references: [id])
 }
 
 model Bid {
@@ -74,8 +76,15 @@ enum increments {
   ONE         @map("1")
   FIVE        @map("5")
   TEN         @map("10")
-  FIFTY       @map("50")
   HUNDRED     @map("100")
   FIVEHUNDRED @map("500")
+  FIFTY       @map("50")
   THOUSAND    @map("1000")
+}
+
+enum TransactionStatus {
+  PENDING
+  PAYMENT_CONFIRMED_BY_BUYER
+  PAYMENT_RECEIVED_AND_SHIPPED
+  RECEIVED_CONFIRMED
 }

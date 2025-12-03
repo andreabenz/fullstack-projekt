@@ -646,6 +646,80 @@ app.post('/posts/:id/repost', requireAuth, async (req, res) => {
 });
 
 
+// Bezahlprozess
+// 1) Käufer bestätigt Zahlung
+app.post('/posts/:id/confirm-payment', requireAuth, async (req, res) => {
+    const id = Number(req.params.id);
+    const userId = Number(req.session.userId);
+
+    const post = await prisma.post.findUnique({ where: { id }, select: { buyerId: true, transactionStatus: true } });
+    if (!post) return res.status(404).send('Beitrag nicht gefunden');
+    if (post.buyerId !== userId) return res.status(403).send('Nur der Käufer kann die Zahlung bestätigen');
+
+    if (post.transactionStatus !== 'PENDING') {
+        return res.redirect(`/posts/view/${id}`);
+    }
+
+    await prisma.post.update({
+        where: { id },
+        data: {
+            transactionStatus: 'PAYMENT_CONFIRMED_BY_BUYER',
+            transactionUpdatedAt: new Date()
+        }
+    });
+
+    res.redirect(`/posts/view/${id}`);
+});
+
+// 2) Verkäufer bestätigt Zahlung erhalten & Versand
+app.post('/posts/:id/confirm-payment-received-and-shipped', requireAuth, async (req, res) => {
+    const id = Number(req.params.id);
+    const userId = Number(req.session.userId);
+
+    const post = await prisma.post.findUnique({ where: { id }, select: { userId: true, transactionStatus: true } });
+    if (!post) return res.status(404).send('Beitrag nicht gefunden');
+    if (post.userId !== userId) return res.status(403).send('Nur der Verkäufer kann diese Aktion ausführen');
+
+    if (post.transactionStatus !== 'PAYMENT_CONFIRMED_BY_BUYER') {
+        return res.redirect(`/posts/view/${id}`);
+    }
+
+    await prisma.post.update({
+        where: { id },
+        data: {
+            transactionStatus: 'PAYMENT_RECEIVED_AND_SHIPPED',
+            transactionUpdatedAt: new Date()
+        }
+    });
+
+    res.redirect(`/posts/view/${id}`);
+});
+
+// 3) Käufer bestätigt Erhalt -> Transaktion abschliessen
+app.post('/posts/:id/confirm-received', requireAuth, async (req, res) => {
+    const id = Number(req.params.id);
+    const userId = Number(req.session.userId);
+
+    const post = await prisma.post.findUnique({ where: { id }, select: { buyerId: true, transactionStatus: true } });
+    if (!post) return res.status(404).send('Beitrag nicht gefunden');
+    if (post.buyerId !== userId) return res.status(403).send('Nur der Käufer kann den Erhalt bestätigen');
+
+    if (post.transactionStatus !== 'PAYMENT_RECEIVED_AND_SHIPPED') {
+        return res.redirect(`/posts/view/${id}`);
+    }
+
+    await prisma.post.update({
+        where: { id },
+        data: {
+            transactionStatus: 'RECEIVED_CONFIRMED',
+            transactionUpdatedAt: new Date(),
+            isSold: true
+        }
+    });
+
+    res.redirect(`/posts/view/${id}`);
+});
+
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
