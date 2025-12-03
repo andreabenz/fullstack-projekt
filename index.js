@@ -2,7 +2,7 @@ require('dotenv').config();
 const path = require('path');
 const express = require('express');
 const expressLayouts = require('express-ejs-layouts');
-const { PrismaClient, categories } = require('./generated/prisma');
+const { PrismaClient, categories, increments } = require('./generated/prisma');
 const fileUpload = require('express-fileupload');
 const fs = require('fs').promises;
 const { v4: uuidv4 } = require('uuid');
@@ -13,6 +13,16 @@ const app = express();
 const prisma = new PrismaClient();
 
 const PORT = process.env.PORT || 3000;
+
+const INCREMENT_VALUES = {
+    ONE: 1,
+    FIVE: 5,
+    TEN: 10,
+    FIFTY: 50,
+    HUNDRED: 100,
+    FIVEHUNDRED: 500,
+    THOUSAND: 1000
+};
 
 // express setup
 app.set('view engine', 'ejs');
@@ -29,7 +39,6 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 //public folder
 app.use('/public', express.static(path.join(__dirname, 'public')));
 // user setup and session configuration
-app.use(express.urlencoded({ extended: true }));
 app.use(session({
     secret: process.env.SESSION_SECRET || 'fallback_secret',
     resave: false,
@@ -42,7 +51,7 @@ app.use(session({
 }))
 // make currentUser available to all views
 app.use((req, res, next) => {
-    res.locals.currentUser = req.session.userId ? { id: req.session.userId } : null;
+    res.locals.currentUser = req.session.userId ? { id: req.session.userId, username: req.session.username } : null;
     next();
 });
 
@@ -67,11 +76,15 @@ app.get('/register', (req, res) => {
 });
 
 app.post('/register', async (req, res) => {
-    const { email, password } = req.body;
+    const { email, username, password} = req.body;
 
     // Basic validation
-    if (!email || !password) {
-        return res.render('auth/register', { error: 'Email and password required' });
+    if (!email || !password || !username) {
+        return res.render('auth/register', { error: 'Email, password and username required' });
+    }
+
+    if (username.length > 15) {
+        return res.render('auth/register', { error: 'Username can\'t be longer than 15 characters' });
     }
 
     if (password.length < 6) {
@@ -79,10 +92,16 @@ app.post('/register', async (req, res) => {
     }
 
     try {
-        // Check if user exists
-        const existingUser = await prisma.user.findUnique({ where: { email } });
-        if (existingUser) {
+        // Check if email exists
+        const existingUserEmail = await prisma.user.findUnique({ where: { email } });
+        if (existingUserEmail) {
             return res.render('auth/register', { error: 'Email already registered' });
+        }
+
+        // Check if username exists
+        const existingUserUsername = await prisma.user.findUnique({ where: { username } });
+        if (existingUserUsername) {
+            return res.render('auth/register', { error: 'Username already exists, please choose another one' });
         }
 
         // Hash password
@@ -90,11 +109,12 @@ app.post('/register', async (req, res) => {
 
         // Create user
         const user = await prisma.user.create({
-            data: { email, passwordHash }
+            data: { email, username, passwordHash}
         });
 
         // Auto-login after registration
         req.session.userId = user.id;
+        req.session.username = user.username;
         res.redirect('/posts');
     } catch (error) {
         res.render('auth/register', { error: 'Registration failed' });
@@ -128,6 +148,7 @@ app.post('/login', async (req, res) => {
 
         // Set session
         req.session.userId = user.id;
+        req.session.username = user.username;
         res.redirect('/posts');
     } catch (error) {
         res.render('auth/login', { error: 'Login failed' });
@@ -146,6 +167,7 @@ app.post('/logout', (req, res) => {
 app.get('/posts', async (req, res) => {
     const filters = req.query.filter;
     const filterList = Array.isArray(filters) ? filters : filters ? [filters] : [];
+
     let posts;
 
     if (filterList.length === 0) {
@@ -154,13 +176,13 @@ app.get('/posts', async (req, res) => {
         });
     }
     else {
-       posts = await prisma.post.findMany({
-           where: {
-               category: {
-                   in: filterList
-               }
-           }
-       });
+        posts = await prisma.post.findMany({
+            where: {
+                category: {
+                    in: filterList
+                }
+            }
+        });
 
     }
     res.render('posts/index', {
@@ -171,7 +193,8 @@ app.get('/posts', async (req, res) => {
             M_bel: 'Möbel'
         },
         sidebar: true,
-        selectedFilters: filterList
+        selectedFilters: filterList,
+        layout: req.xhr ? false : 'layout'
     });
 });
 
@@ -180,11 +203,51 @@ app.get('/posts/view/:id', async (req, res) => {
     const id = Number(req.params.id);
     const post = await prisma.post.findUnique({
         where: {id},
-        include: {images: true}
+        include: {
+            images: true,
+            User: true,
+            bids: { orderBy: {
+                    createdAt: "desc"
+                },
+                include: {
+                    User: true
+                }
+            }
+        }
     });
     if (!post) return res.status(404).send('Post not found');
+
+    const now = new Date();
+    const hasEnded = post.endsAt && post.endsAt < now;
+
+    if (hasEnded && post.buyerId && !post.isSold) {
+        await prisma.post.update({
+            where: { id: post.id },
+            data: {
+                isSold: true
+            }
+        });
+        post.isSold = true;
+    }
+
+    const increment = INCREMENT_VALUES[post.increment];
+    const bidCount = post.bids.length;
+    const isFirstBid = bidCount === 0;
+
+    const currentBid = isFirstBid ? null : post.currentPrice;
+    const nextBid = isFirstBid ? post.startingPrice : (post.currentPrice ?? post.startingPrice) + increment;
+
+    const highestBid = post.bids[0];
+    const userHasHighestBid = !!(highestBid && req.session.userId && highestBid.userId === Number(req.session.userId));
+
     res.render('posts/view', {
-        post, CATEGORY_LABELS: {
+        post,
+        hasEnded,
+        currentBid,
+        nextBid,
+        bidCount,
+        userHasHighestBid,
+        CATEGORY_LABELS: {
             Kleider_Accessoires: 'Kleider/Accessoires',
             M_bel: 'Möbel'
         }
@@ -198,19 +261,45 @@ app.get('/posts/new', requireAuth, (req, res) => {
         CATEGORY_LABELS: {
             Kleider_Accessoires: 'Kleider/Accessoires',
             M_bel: 'Möbel'
+        },
+        increments: Object.values(increments),
+        INCREMENT_VALUES: {
+            ONE: 1,
+            FIVE: 5,
+            TEN: 10,
+            FIFTY: 50,
+            HUNDRED: 100,
+            FIVEHUNDRED: 500,
+            THOUSAND: 1000
         }
     });
 });
 
 // post new
 app.post('/posts', requireAuth, async (req, res) => {
-    const { title, category, description } = req.body;
+    const { title, category, description, startingPrice, buyNowPrice, increment } = req.body;
 
     if (!Object.values(categories).includes(category)) {
         return res.status(400).send('Ungültige Kategorie');
     }
 
-    const newPost = await prisma.post.create({ data: {title, category, description} });
+    if (!Object.values(increments).includes(increment)) {
+        return res.status(400).send('Ungültiges Inkrement')
+    }
+
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() +10);
+
+    const newPost = await prisma.post.create( {
+        data: {
+            title, category, description,
+            startingPrice: parseFloat(startingPrice),
+            userId: req.session.userId,
+            buyNowPrice: buyNowPrice ? parseFloat(buyNowPrice) : null,
+            endsAt: endDate,
+            increment
+        }
+    } );
 
     const files = req.files && req.files.images ? req.files.images : null;
     if (files) {
@@ -239,6 +328,144 @@ app.post('/posts', requireAuth, async (req, res) => {
 
     res.redirect('/posts');
 })
+
+// bid
+app.post('/posts/bid/:id', requireAuth, async (req, res) => {
+    const postId = Number(req.params.id);
+    const userId = Number(req.session.userId);
+
+    const post = await prisma.post.findUnique({
+        where: { id: postId },
+        include: {
+            images: true,
+            User: true,
+            bids: { orderBy: { createdAt: 'desc' }, include: { User: true } }
+        }
+    });
+
+    const now = new Date();
+    const hasEnded = post.endsAt && post.endsAt < now;
+
+    if (post.userId === userId) {
+        return res.render('posts/view', {
+            post,
+            hasEnded,
+            currentBid: post.currentPrice ?? null,
+            nextBid: (post.currentPrice ?? post.startingPrice) + INCREMENT_VALUES[post.increment],
+            bidCount: post.bids.length,
+            userHasHighestBid: false,
+            CATEGORY_LABELS: {
+                Kleider_Accessoires: 'Kleider/Accessoires',
+                M_bel: 'Möbel'
+            },
+            error: "Du kannst nicht auf dein eigenes Angebot bieten"
+        });
+    }
+
+    const highestBid = post.bids[0];
+    const userHasHighestBid = !!(highestBid && highestBid.userId === userId);
+
+    if (userHasHighestBid) {
+        return res.render('posts/view', {
+            post,
+            hasEnded,
+            currentBid: post.currentPrice ?? null,
+            nextBid: (post.currentPrice ?? post.startingPrice) + INCREMENT_VALUES[post.increment],
+            bidCount: post.bids.length,
+            userHasHighestBid: true,
+            CATEGORY_LABELS: {
+                Kleider_Accessoires: 'Kleider/Accessoires',
+                M_bel: 'Möbel'
+            },
+            error: "Du hast bereits das höchste Gebot"
+        });
+    }
+
+    const increment = INCREMENT_VALUES[post.increment];
+    const isFirstBid = post.currentPrice === null;
+    const newBidAmount = isFirstBid ? post.startingPrice : post.currentPrice + increment;
+
+    let newEndsAt = post.endsAt;
+    if (post.endsAt && post.endsAt - now <= 60000) {
+        newEndsAt = new Date(now.getTime() + 60000);
+    }
+
+    await prisma.$transaction([
+        prisma.bid.create({
+            data: { amount: newBidAmount, userId, postId }
+        }),
+        prisma.post.update({
+            where: { id: postId },
+            data: {
+                currentPrice: newBidAmount,
+                buyerId: userId,
+                endsAt: newEndsAt
+            }
+        })
+    ]);
+
+    res.redirect(`/posts/view/${postId}`);
+})
+
+//profile page
+app.get('/profile', requireAuth, async (req, res) => {
+    const userId = Number(req.session.userId);
+    const now = new Date();
+
+    // posts the user has placed bids on, excluding already sold posts
+    const biddingOn = await prisma.post.findMany({
+        where: {
+            bids: { some: { userId } },
+            OR: [
+                { endsAt: { gt: now } },  // still active
+                { endsAt: null }          // maybe no end date
+            ]
+        },
+        include: {
+            images: true,
+            bids: { orderBy: { createdAt: 'desc' }, include: { User: true } },
+            User: true
+        },
+        orderBy: { createdAt: 'desc' }
+    });
+
+    // posts the user has bought, only ended and sold
+    const bought = await prisma.post.findMany({
+        where: {
+            buyerId: userId,
+            isSold: true,
+            endsAt: { lte: now }  // auction ended
+        },
+        include: {
+            images: true,
+            bids: { orderBy: { createdAt: 'desc' }, include: { User: true } },
+            User: true
+        },
+        orderBy: { endsAt: 'desc' }
+    });
+
+    // posts the user is selling
+    const selling = await prisma.post.findMany({
+        where: { userId },
+        include: {
+            images: true,
+            bids: { orderBy: { createdAt: 'desc' }, include: { User: true } },
+            User: true
+        },
+        orderBy: { createdAt: 'desc' }
+    });
+
+    res.render('profile', {
+        biddingOn,
+        bought,
+        selling,
+        CATEGORY_LABELS: {
+            Kleider_Accessoires: 'Kleider/Accessoires',
+            M_bel: 'Möbel'
+        }
+    });
+});
+
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

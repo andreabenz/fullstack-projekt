@@ -14,13 +14,19 @@
                class="flex mt-1 mb-4 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-2/3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
     </div>
     <div>
+        <label class="block text-sm font-medium text-gray-700">Username</label>
+        <input type="text" name="username" required
+               class="flex mt-1 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-2/3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <p class="mt-1 text-xs text-gray-500">Maximum 15 characters</p>
+    </div>
+    <div>
         <label class="block text-sm font-medium text-gray-700">Password</label>
         <input type="password" name="password" required
                class="flex mt-1 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-2/3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
         <p class="mt-1 text-xs text-gray-500">Minimum 6 characters</p>
     </div>
     <div class="flex items-center gap-5 pt-1.5">
-        <button type="submit" class="text-md font-normal px-4 py-2 rounded md bg-blue-600 text-white shadow-sm hover:bg-blue-500 focus:ring-blue ring-offset-2 transition">
+        <button type="submit" class="text-md font-normal px-4 py-2 rounded md bg-blue-600 text-white shadow-sm hover:bg-blue-500 focus:ring-blue ring-offset-2 transition cursor-pointer">
             Register
         </button>
         <a href="/login" class="text-md font-normal text-gray-600 hover:underline">Login</a>

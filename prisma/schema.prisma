@@ -14,27 +14,49 @@ model User {
   email        String   @unique
   passwordHash String
   createdAt    DateTime @default(now())
+  username     String   @unique @db.VarChar(15)
+  bids         Bid[]
+  Post         Post[]   @relation("Buyer")
   posts        Post[]
 }
 
 model Post {
-  id          Int         @id @default(autoincrement())
-  title       String?     @db.VarChar(10)
-  category    categories?
-  description String?
-  createdAt   DateTime?   @default(now())
-  updatedAt   DateTime?   @updatedAt
-  images      Image[]
-  User        User?       @relation(fields: [userId], references: [id])
-  userId      Int?
+  id            Int         @id @default(autoincrement())
+  title         String?     @db.VarChar(50)
+  category      categories?
+  description   String?
+  createdAt     DateTime?   @default(now())
+  updatedAt     DateTime?
+  userId        Int?
+  buyNowPrice   Float?
+  currentPrice  Float?
+  isSold        Boolean     @default(false)
+  startingPrice Float
+  buyerId       Int?
+  endsAt        DateTime?
+  increment     increments?
+  bids          Bid[]
+  images        Image[]
+  buyer         User?       @relation("Buyer", fields: [buyerId], references: [id])
+  User          User?       @relation(fields: [userId], references: [id])
+}
+
+model Bid {
+  id        Int      @id @default(autoincrement())
+  amount    Float
+  userId    Int
+  postId    Int
+  createdAt DateTime @default(now())
+  Post      Post     @relation(fields: [postId], references: [id])
+  User      User     @relation(fields: [userId], references: [id])
 }
 
 model Image {
   id        Int      @id @default(autoincrement())
   path      String
-  post      Post     @relation(fields: [postId], references: [id])
   postId    Int
   createdAt DateTime @default(now())
+  Post      Post     @relation(fields: [postId], references: [id])
 }
 
 enum categories {
@@ -46,4 +68,14 @@ enum categories {
   Deko
   Sport
   Sonstiges
+}
+
+enum increments {
+  ONE         @map("1")
+  FIVE        @map("5")
+  TEN         @map("10")
+  FIFTY       @map("50")
+  HUNDRED     @map("100")
+  FIVEHUNDRED @map("500")
+  THOUSAND    @map("1000")
 }

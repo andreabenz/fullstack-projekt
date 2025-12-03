@@ -2,11 +2,11 @@
 
 <form action="/posts" method="post" enctype="multipart/form-data">
     <label class="text-lg font-bold">Titel
-        <input class="flex mt-1 mb-4 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-2/3 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder = "Gib deinen Titel ein" type="text" name="title" required>
+        <input class="flex mt-1 mb-4 py-1 pl-1 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-2/3 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder = "Gib deinen Titel ein" type="text" name="title" required>
     </label>
 
     <label class="text-lg font-medium">Kategorie
-        <select class="flex mt-1 mb-4 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-1/2 focus:outline-none focus:ring-2 focus:ring-blue-500" name="category" required>
+        <select class="flex mt-1 mb-4 py-1 pl-1 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-1/2 focus:outline-none focus:ring-2 focus:ring-blue-500" name="category" required>
             <option value="" disabled selected>Wähle deine Kategorie aus</option>
             <% categories.forEach(function(cat) { %>
                 <option value="<%= cat %>"><%= CATEGORY_LABELS[cat] || cat %></option>
@@ -14,16 +14,33 @@
         </select>
     </label>
 
-    <label class=" text-lg font-medium">Bild hochladen
-        <input type="file" name="images" accept="image/*" multiple class="block mt-1 mb-4 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-1/2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+    <label class="text-lg font-medium">Startpreis (CHF)
+        <input class="flex mt-1 mb-4 py-1 pl-1 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-1/8 focus:outline-none focus:ring-2 focus:ring-blue-500" type="number" name="startingPrice"  step="0.05" min="1.00" placeholder="0.00 CHF" required>
+    </label>
+
+    <label class="text-lg font-medium">optionaler Sofortkaufpreis (CHF)
+        <input class="flex mt-1 mb-4 py-1 pl-1 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-1/8 focus:outline-none focus:ring-2 focus:ring-blue-500" type="number" name="buyNowPrice" step="0.05" min="1.00" placeholder="0.00 CHF">
+    </label>
+
+    <label class="text-lg font-medium">Inkremente
+        <select class="flex mt-1 mb-4 py-1 pl-1 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-1/4 focus:outline-none focus:ring-2 focus:ring-blue-500" name="increment" required>
+            <option value="" disabled selected>Wähle deine Inkremente aus</option>
+            <% increments.forEach(function(inc) { %>
+                <option value="<%= inc %>">+ <%= INCREMENT_VALUES[inc] %> CHF</option>
+            <% }) %>
+        </select>
+    </label>
+
+    <label class=" text-lg font-medium">Bilder hochladen
+        <input type="file" name="images" accept="image/*" multiple class="block mt-1  py-1 pl-1 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-1/2 focus:outline-none focus:ring-2 focus:ring-blue-500">
     </label>
 
     <label class="text-lg font-medium ">Beschreibung
-        <textarea class="flex mt-1 mb-4 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder = "Gib deine Beschreibung ein" rows="6" name="description" required></textarea>
+        <textarea class="flex mt-1 mb-4 py-1 pl-1 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder = "Gib deine Beschreibung ein" rows="6" name="description" required></textarea>
     </label>
 
     <div class="flex flex-row-reverse justify-between items-center">
-        <button type="submit" class="text-md font-normal px-4 py-2 rounded md bg-blue-600 text-white shadow-sm hover:bg-blue-500 focus:ring-blue ring-offset-2 transition" >Erstellen</button>
+        <button type="submit" class="text-md font-normal px-4 py-2 rounded md bg-blue-600 text-white shadow-sm hover:bg-blue-500 focus:ring-blue ring-offset-2 transition cursor-pointer" >Erstellen</button>
         <a href="/posts/" class="text-sm rounded-md border-gray-600 text-gray-600 shadow-sm px-4 py-2 hover:bg-gray-200 transition">Abbrechen</a>
     </div>
 </form>
