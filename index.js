@@ -466,6 +466,98 @@ app.get('/profile', requireAuth, async (req, res) => {
     });
 });
 
+// edit page
+app.get('/posts/:id/edit', requireAuth, async (req, res) => {
+    const id = Number(req.params.id);
+    const userId = Number(req.session.userId);
+    const now = new Date();
+
+    const post = await prisma.post.findUnique({
+        where: { id },
+        include: {
+            images: true
+        }
+    });
+
+    if (!post) return res.status(404).send('Beitrag nicht gefunden');
+
+    // only owner can edit
+    if (post.userId !== userId) {
+        return res.status(403).send('Nicht berechtigt');
+    }
+
+    // only editable if active (not sold and not ended)
+    const hasEnded = post.endsAt && post.endsAt < now;
+    if (post.isSold || hasEnded) {
+        return res.status(400).send('Dieser Beitrag kann nicht mehr bearbeitet werden');
+    }
+
+    res.render('posts/edit', {
+        post,
+        categories: Object.values(categories),
+        CATEGORY_LABELS: {
+            Kleider_Accessoires: 'Kleider/Accessoires',
+            M_bel: 'Möbel'
+        }
+    });
+});
+
+// update post
+app.post('/posts/:id', requireAuth, async (req, res) => {
+    const id = Number(req.params.id);
+    const { title, description, category } = req.body;
+    const now = new Date();
+
+    const hasEnded = post.endsAt && post.endsAt < now;
+    if (post.isSold || hasEnded) {
+        return res.status(400).send('Dieser Beitrag kann nicht mehr bearbeitet werden');
+    }
+
+    if (category && !Object.values(categories).includes(category)) {
+        return res.status(400).send('Ungültige Kategorie');
+    }
+
+    await prisma.post.update({
+        where: { id },
+        data: {
+            title,
+            description,
+            category,
+            updatedAt: new Date()
+        }
+    });
+
+    const files = req.files && req.files.images ? req.files.images : null;
+    if (files) {
+        const filesArray = Array.isArray(files) ? files : [files];
+        const postFolder = path.join(__dirname, 'uploads', 'posts', String(id));
+        await fs.mkdir(postFolder, { recursive: true });
+
+        const imageData = [];
+
+        for (const file of filesArray) {
+            if (!file.mimetype.startsWith('image/')) continue;
+            const ext = path.extname(file.name);
+            const filename = `${uuidv4()}${ext}`;
+            const destPath = path.join(postFolder, filename);
+            await file.mv(destPath);
+
+            const publicPath = path.posix.join('/uploads', 'posts', String(id), filename);
+            imageData.push({ path: publicPath, postId: id });
+        }
+
+        if (imageData.length > 0) {
+            await prisma.image.createMany({ data: imageData });
+            await prisma.post.update({
+                where: { id },
+                data: { updatedAt: new Date() }
+            });
+        }
+    }
+
+    res.redirect('/profile');
+});
+
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
