@@ -1,0 +1,175 @@
+<% title = 'Profil' %>
+
+<section class="space-y-6">
+    <header class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-semibold">Profil von <%= currentUser.username %></h1>
+            <p class="text-sm text-gray-500">Übersicht deiner Aktivitäten</p>
+        </div>
+    </header>
+
+    <section>
+        <h2 class="text-xl font-medium mb-3">Angebote, auf die du geboten hast</h2>
+
+        <% if (biddingOn && biddingOn.length > 0) { %>
+            <div class="flex flex-wrap -mx-2">
+                <% biddingOn.forEach(post => { %>
+                    <div class="px-2 w-full sm:w-1/2 my-2">
+                        <div class="p-4 bg-white rounded-lg shadow-sm ring-1 ring-gray-200 flex space-x-4">
+                            <a href="/posts/view/<%= post.id %>"
+                               class="w-24 h-20 overflow-hidden rounded-md bg-gray-100 flex-shrink-0">
+                                <% if (post.images?.length > 0) { %>
+                                    <img src="<%= post.images[0].path %>" class="w-full h-full object-cover"/>
+                                <% } else { %>
+                                    <div class="w-full h-full flex items-center justify-center text-xs text-gray-400">
+                                        kein Bild
+                                    </div>
+                                <% } %>
+                            </a>
+
+                            <div class="flex-1">
+                                <a href="/posts/view/<%= post.id %>"
+                                   class="font-semibold text-gray-900 hover:underline break-words">
+                                    <%= post.title || 'Ohne Titel' %>
+                                </a>
+
+                                <p class="text-xs text-gray-500 mt-1">
+                                    <%= CATEGORY_LABELS[post.category] || post.category || '—' %> · Endet:
+                                    <%= new Date(post.endsAt).toLocaleString('de-DE', {
+                                        year: "numeric",
+                                        month: '2-digit',
+                                        day: '2-digit',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    }) %>
+                                </p>
+
+                                <% const latestBid = post.bids[0]; %>
+                                <% const userIsHighest = latestBid && currentUser && latestBid.userId === currentUser.id; %>
+
+                                <% if (userIsHighest) { %>
+                                    <div class="flex items-center gap-3 mt-2">
+                                <span class="inline-block text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">
+                                    Du führst
+                                </span>
+
+                                        <span class="text-xs text-gray-900 font-semibold">
+                                    Momentanes Gebot: CHF <%= post.currentPrice ? parseFloat(post.currentPrice).toFixed(2) : '-' %>
+                                </span>
+                                    </div>
+                                <% } else if (latestBid) { %>
+                                    <span class="inline-block text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700 mt-2">
+                                CHF <%= parseFloat(latestBid.amount).toFixed(2) %>
+                            </span>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        <% } else { %>
+            <p class="text-sm text-gray-500">Du hast noch auf keine Beiträge geboten.</p>
+        <% } %>
+
+        <section>
+            <h2 class="text-xl font-medium mb-3">Gekaufte Angebote</h2>
+
+            <% if (bought && bought.length > 0) { %>
+                <div class="flex flex-wrap -mx-2">
+                    <% bought.forEach(post => { %>
+                        <div class="px-2 w-full sm:w-1/2 my-2">
+                            <div class="p-4 bg-white rounded-lg shadow-sm ring-1 ring-gray-200 flex space-x-4">
+                                <a href="/posts/view/<%= post.id %>"
+                                   class="w-24 h-20 overflow-hidden rounded-md bg-gray-100 flex-shrink-0">
+                                    <% if (post.images?.length > 0) { %>
+                                        <img src="<%= post.images[0].path %>" class="w-full h-full object-cover"/>
+                                    <% } else { %>
+                                        <div class="w-full h-full flex items-center justify-center text-xs text-gray-400">
+                                            kein Bild
+                                        </div>
+                                    <% } %>
+                                </a>
+
+                                <div class="flex-1">
+                                    <a href="/posts/view/<%= post.id %>"
+                                       class="font-semibold text-gray-900 hover:underline break-words">
+                                        <%= post.title %>
+                                    </a>
+
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        <%= CATEGORY_LABELS[post.category] || post.category %> · Kaufdatum:
+                                        <%= new Date(post.endsAt).toLocaleString('de-DE', {
+                                            year: "numeric",
+                                            month: '2-digit',
+                                            day: '2-digit',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        }) %>
+                                    </p>
+
+                                    <div class="flex items-center gap-3 mt-2">
+                                        <span class="inline-block text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">Gekauft</span>
+
+                                        <span class="text-xs text-gray-900 font-semibold">Kaufpreis: CHF <%= post.currentPrice ? parseFloat(post.currentPrice).toFixed(2) : '-' %></span>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+            <% } else { %>
+                <p class="text-sm text-gray-500">Du hast noch nichts gekauft.</p>
+            <% } %>
+        </section>
+
+        <section>
+            <h2 class="text-xl font-medium mb-3">Deine Angebote</h2>
+
+            <% if (selling && selling.length > 0) { %>
+                <div class="flex flex-wrap -mx-2">
+                    <% selling.forEach(post => { %>
+                        <div class="px-2 w-full sm:w-1/2 my-2">
+                            <div class="p-4 bg-white rounded-lg shadow-sm ring-1 ring-gray-200 flex space-x-4">
+                                <a href="/posts/view/<%= post.id %>"
+                                   class="w-24 h-20 overflow-hidden rounded-md bg-gray-100 flex-shrink-0">
+                                    <% if (post.images?.length > 0) { %>
+                                        <img src="<%= post.images[0].path %>" class="w-full h-full object-cover"/>
+                                    <% } else { %>
+                                        <div class="w-full h-full flex items-center justify-center text-xs text-gray-400">
+                                            kein Bild
+                                        </div>
+                                    <% } %>
+                                </a>
+
+                                <div class="flex-1">
+                                    <a href="/posts/view/<%= post.id %>"
+                                       class="font-semibold text-gray-900 hover:underline break-words">
+                                        <%= post.title %>
+                                    </a>
+
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        Startpreis:
+                                        CHF <%= parseFloat(post.startingPrice).toFixed(2) %>
+                                    </p>
+
+                                    <% const hasEnded = post.endsAt && new Date(post.endsAt) < new Date(); %>
+
+                                    <% if (post.isSold || post.buyerId) { %>
+                                        <span class="inline-block text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700 mt-2">Verkauft</span>
+                                    <% } else if (hasEnded) { %>
+                                        <span class="inline-block text-xs px-2 py-1 rounded-full bg-red-100 text-red-800 mt-2">Nicht verkauft</span>
+                                    <% } else { %>
+                                        <span class="inline-block text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 mt-2">Aktiv</span>
+                                    <% } %>
+                                </div>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+            <% } else { %>
+                <p class="text-sm text-gray-500">Du verkaufst aktuell keine Beiträge.</p>
+            <% } %>
+        </section>
+    </section>
+</section>

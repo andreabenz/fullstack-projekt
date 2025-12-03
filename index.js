@@ -407,6 +407,66 @@ app.post('/posts/bid/:id', requireAuth, async (req, res) => {
     res.redirect(`/posts/view/${postId}`);
 })
 
+//profile page
+app.get('/profile', requireAuth, async (req, res) => {
+    const userId = Number(req.session.userId);
+    const now = new Date();
+
+    // posts the user has placed bids on, excluding already sold posts
+    const biddingOn = await prisma.post.findMany({
+        where: {
+            bids: { some: { userId } },
+            OR: [
+                { endsAt: { gt: now } },  // still active
+                { endsAt: null }          // maybe no end date
+            ]
+        },
+        include: {
+            images: true,
+            bids: { orderBy: { createdAt: 'desc' }, include: { User: true } },
+            User: true
+        },
+        orderBy: { createdAt: 'desc' }
+    });
+
+    // posts the user has bought, only ended and sold
+    const bought = await prisma.post.findMany({
+        where: {
+            buyerId: userId,
+            isSold: true,
+            endsAt: { lte: now }  // auction ended
+        },
+        include: {
+            images: true,
+            bids: { orderBy: { createdAt: 'desc' }, include: { User: true } },
+            User: true
+        },
+        orderBy: { endsAt: 'desc' }
+    });
+
+    // posts the user is selling
+    const selling = await prisma.post.findMany({
+        where: { userId },
+        include: {
+            images: true,
+            bids: { orderBy: { createdAt: 'desc' }, include: { User: true } },
+            User: true
+        },
+        orderBy: { createdAt: 'desc' }
+    });
+
+    res.render('profile', {
+        biddingOn,
+        bought,
+        selling,
+        CATEGORY_LABELS: {
+            Kleider_Accessoires: 'Kleider/Accessoires',
+            M_bel: 'Möbel'
+        }
+    });
+});
+
+
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
