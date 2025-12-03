@@ -12,3 +12,6 @@ fullstack-prokekt.iml
 
 #Prisma
 /generated/prisma
+
+# File Uploads
+uploads

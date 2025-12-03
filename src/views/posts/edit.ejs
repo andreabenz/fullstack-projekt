@@ -1,0 +1,54 @@
+<% title = `Bearbeiten: ${post.title || 'Beitrag'}` %>
+
+<form action="/posts/<%= post.id %>" method="post" enctype="multipart/form-data" class="space-y-6">
+    <label class="text-lg font-bold">Titel
+        <input type="text" name="title" value="<%- post.title || '' %>" required
+               class="flex mt-1 mb-4 py-1 pl-1 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-2/3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+               placeholder="Gib deinen Titel ein">
+    </label>
+
+    <label class="text-lg font-medium">Kategorie
+        <select name="category" required
+                class="flex mt-1 mb-4 py-1 pl-1 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-1/2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <% categories.forEach(function(cat) { %>
+                <option value="<%= cat %>" <%= post.category === cat ? 'selected' : '' %>>
+                    <%= CATEGORY_LABELS[cat] || cat %>
+                </option>
+            <% }) %>
+        </select>
+    </label>
+
+    <label class="text-lg font-medium">Vorhandene Bilder</label>
+    <% if (post.images && post.images.length > 0) { %>
+        <div class="mt-2 flex gap-2 flex-wrap">
+            <% post.images.forEach(img => { %>
+                <div class="w-24 h-20 bg-gray-100 rounded-md overflow-hidden flex items-center justify-center">
+                    <img src="<%= img.path %>" class="object-cover w-full h-full" />
+                </div>
+            <% }) %>
+        </div>
+    <% } else { %>
+        <p class="text-sm text-gray-500 mt-2">Keine Bilder vorhanden.</p>
+    <% } %>
+
+    <label class="text-lg font-medium">Neue Bilder hinzufügen
+        <input type="file" name="images" accept="image/*" multiple
+               class="block mt-1 py-1 pl-1 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-1/2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <p class="text-xs text-gray-500 mt-1 mb-4">Neue Bilder werden zu den bestehenden Bildern hinzugefügt.</p>
+    </label>
+
+    <label class="text-lg font-medium">Beschreibung
+        <textarea name="description" rows="6" required
+                  class="flex mt-1 mb-4 py-1 pl-1 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Gib deine Beschreibung ein"><%- post.description || '' %></textarea>
+    </label>
+
+    <div class="flex flex-row-reverse justify-between items-center">
+        <button type="submit"
+                class="text-md font-normal px-4 py-2 rounded md bg-blue-600 text-white shadow-sm hover:bg-blue-500 focus:ring-blue ring-offset-2 transition cursor-pointer">
+            Speichern
+        </button>
+        <a href="/profile"
+           class="text-sm rounded-md border-gray-600 text-gray-600 shadow-sm px-4 py-2 hover:bg-gray-200 transition">Abbrechen</a>
+    </div>
+</form>

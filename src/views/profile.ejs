@@ -1,0 +1,243 @@
+<% title = 'Profil' %>
+
+<section class="space-y-6">
+    <header class="flex items-center justify-between">
+        <div>
+            <h1 class="text-xl font-medium">Profil von <%= currentUser.username %></h1>
+            <p class="text-sm text-gray-500">Übersicht deiner Aktivitäten</p>
+        </div>
+    </header>
+
+    <section>
+        <h2 class="text-xl font-medium mt-3 mb-1">Angebote, auf die du geboten hast</h2>
+
+        <% if (biddingOn && biddingOn.length > 0) { %>
+            <div class="flex flex-wrap -mx-2">
+                <% biddingOn.forEach(post => { %>
+                    <div class="px-2 w-full sm:w-1/2 my-2">
+                        <div class="p-4 bg-white rounded-lg shadow-sm ring-1 ring-gray-200 flex space-x-4">
+
+                            <a href="/posts/view/<%= post.id %>" class="w-24 h-20 overflow-hidden rounded-md bg-gray-100 flex-shrink-0">
+                                <% if (post.images?.length > 0) { %>
+                                    <img src="<%= post.images[0].path %>" class="w-full h-full object-cover"/>
+                                <% } else { %>
+                                    <div class="w-full h-full flex items-center justify-center text-xs text-gray-400">
+                                        kein Bild
+                                    </div>
+                                <% } %>
+                            </a>
+
+                            <div class="flex-1 flex flex-col justify-between">
+                                <div>
+                                    <a href="/posts/view/<%= post.id %>" class="font-semibold text-gray-900 hover:underline break-words text-lg">
+                                        <%= post.title || 'Ohne Titel' %>
+                                    </a>
+
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        <%= CATEGORY_LABELS[post.category] || post.category || '—' %> · Endet am
+                                        <%= post.endsAt ? new Date(post.endsAt).toLocaleString('de-DE', {
+                                            year: "numeric",
+                                            month: '2-digit',
+                                            day: '2-digit',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        }) : '—' %>
+                                    </p>
+                                </div>
+
+                                <div class="flex items-center gap-3 mt-2 flex-wrap">
+                                    <% const latestBid = post.bids[0]; %>
+                                    <% const userIsHighest = latestBid && currentUser && latestBid.userId === currentUser.id; %>
+
+                                    <% if (userIsHighest) { %>
+                                        <span class="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                                            Du führst
+                                        </span>
+                                        <span class="text-sm text-gray-900 font-semibold">
+                                            Momentanes Gebot: CHF <%= post.currentPrice ? parseFloat(post.currentPrice).toFixed(2) : '-' %>
+                                        </span>
+                                    <% } else if (latestBid) { %>
+                                        <span class="inline-block bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-medium">
+                                            CHF <%= parseFloat(latestBid.amount).toFixed(2) %>
+                                        </span>
+                                    <% } %>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        <% } else { %>
+            <p class="text-sm text-gray-500">Du hast noch auf keine Beiträge geboten.</p>
+        <% } %>
+
+        <section>
+            <h2 class="text-xl font-medium mt-3 mb-1">Gekaufte Angebote</h2>
+
+            <% if (bought && bought.length > 0) { %>
+                <div class="flex flex-wrap -mx-2">
+                    <% bought.forEach(post => { %>
+                        <div class="px-2 w-full sm:w-1/2 my-2">
+                            <div class="p-4 bg-white rounded-lg shadow-sm ring-1 ring-gray-200 flex space-x-4">
+
+                                <a href="/posts/view/<%= post.id %>" class="w-24 h-20 overflow-hidden rounded-md bg-gray-100 flex-shrink-0">
+                                    <% if (post.images?.length > 0) { %>
+                                        <img src="<%= post.images[0].path %>" class="w-full h-full object-cover"/>
+                                    <% } else { %>
+                                        <div class="w-full h-full flex items-center justify-center text-xs text-gray-400">
+                                            kein Bild
+                                        </div>
+                                    <% } %>
+                                </a>
+
+                                <div class="flex-1 flex flex-col justify-between">
+                                    <div>
+                                        <a href="/posts/view/<%= post.id %>" class="font-semibold text-gray-900 hover:underline break-words text-lg">
+                                            <%= post.title %>
+                                        </a>
+
+                                        <p class="text-xs text-gray-500 mt-1">
+                                            <%= CATEGORY_LABELS[post.category] || post.category %> · Kaufdatum:
+                                            <%= post.endsAt ? new Date(post.endsAt).toLocaleString('de-DE', {
+                                                year: "numeric",
+                                                month: '2-digit',
+                                                day: '2-digit',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            }) : '—' %>
+                                        </p>
+                                    </div>
+
+                                    <div class="flex items-center gap-3 mt-2 flex-wrap">
+                                        <% const status = post.transactionStatus || 'PENDING'; %>
+
+                                        <% if (status === 'PENDING') { %>
+                                            <span class="inline-block bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
+                                                Zahlung bestätigen
+                                            </span>
+                                            <form method="POST" action="/posts/<%= post.id %>/confirm-payment" class="inline-block">
+                                                <button type="submit" class="inline-flex items-center bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-1.5 rounded-full transition">
+                                                    Zahlung bestätigen
+                                                </button>
+                                            </form>
+
+                                        <% } else if (status === 'PAYMENT_CONFIRMED_BY_BUYER') { %>
+                                            <span class="inline-block bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-medium">
+                                                Warte auf Versand
+                                            </span>
+                                        <% } else if (status === 'PAYMENT_RECEIVED_AND_SHIPPED') { %>
+                                            <form method="POST" action="/posts/<%= post.id %>/confirm-received" class="inline-block">
+                                                <button type="submit" class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-1.5 rounded-full transition">
+                                                    Erhalt bestätigen
+                                                </button>
+                                            </form>
+                                        <% } else if (status === 'RECEIVED_CONFIRMED') { %>
+                                            <span class="inline-block bg-green-50 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                                                Abgeschlossen
+                                            </span>
+                                        <% } %>
+
+                                        <span class="text-xs text-gray-900 font-semibold">
+                                            Kaufpreis: CHF <%= post.currentPrice ? parseFloat(post.currentPrice).toFixed(2) : '-' %>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+            <% } else { %>
+                <p class="text-sm text-gray-500">Du hast noch nichts gekauft.</p>
+            <% } %>
+        </section>
+
+        <section>
+            <h2 class="text-xl font-medium mt-3 mb-1">Deine Angebote</h2>
+
+            <% if (selling && selling.length > 0) { %>
+                <div class="flex flex-wrap -mx-2">
+                    <% selling.forEach(post => { %>
+                        <div class="px-2 w-full sm:w-1/2 my-2">
+                            <div class="p-4 bg-white rounded-lg shadow-sm ring-1 ring-gray-200 flex space-x-4">
+
+                                <a href="/posts/view/<%= post.id %>" class="w-24 h-20 overflow-hidden rounded-md bg-gray-100 flex-shrink-0">
+                                    <% if (post.images?.length > 0) { %>
+                                        <img src="<%= post.images[0].path %>" class="w-full h-full object-cover"/>
+                                    <% } else { %>
+                                        <div class="w-full h-full flex items-center justify-center text-xs text-gray-400">
+                                            kein Bild
+                                        </div>
+                                    <% } %>
+                                </a>
+
+                                <div class="flex-1 flex flex-col justify-between">
+                                    <div>
+                                        <a href="/posts/view/<%= post.id %>" class="font-semibold text-gray-900 hover:underline break-words text-lg">
+                                            <%= post.title %>
+                                        </a>
+
+                                        <p class="text-xs text-gray-500 mt-1">
+                                            <%= CATEGORY_LABELS[post.category] || post.category %> · Endet am
+                                            <%= post.endsAt ? new Date(post.endsAt).toLocaleString('de-DE', {
+                                                year: 'numeric',
+                                                month: '2-digit',
+                                                day: '2-digit',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            }) : '—' %>
+                                        </p>
+                                    </div>
+
+                                    <div class="flex items-center gap-3 mt-2 flex-wrap">
+                                        <% const status = post.transactionStatus || 'PENDING'; %>
+                                        <% const hasEnded = post.endsAt && new Date(post.endsAt) < new Date(); %>
+
+                                        <% if (!post.buyerId) { %>
+                                            <% if (hasEnded) { %>
+                                                <span class="inline-block bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">
+                                                    Nicht verkauft
+                                                </span>
+                                                <a href="/posts/<%= post.id %>/repost" class="inline-flex items-center rounded-full px-3 py-1 border border-gray-300 text-sm">
+                                                    Erneut hochladen
+                                                </a>
+                                            <% } else { %>
+                                                <span class="inline-block bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
+                                                    Aktiv
+                                                </span>
+                                                <a href="/posts/<%= post.id %>/edit" class="inline-flex items-center rounded-full px-3 py-1 border border-gray-300 text-sm">
+                                                    Bearbeiten
+                                                </a>
+                                            <% } %>
+                                        <% } else { %>
+                                            <% if (status === 'PAYMENT_CONFIRMED_BY_BUYER') { %>
+                                                <form method="POST" action="/posts/<%= post.id %>/confirm-payment-received-and-shipped" class="inline-block">
+                                                    <button type="submit" class="inline-flex items-center rounded-full px-3 py-1 border border-gray-300 text-sm">
+                                                        Versand bestätigen
+                                                    </button>
+                                                </form>
+                                            <% } else if (status === 'PAYMENT_RECEIVED_AND_SHIPPED') { %>
+                                                <span class="inline-block bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-medium">
+                                                    Warte auf Käufer
+                                                </span>
+                                            <% } else if (status === 'RECEIVED_CONFIRMED') { %>
+                                                <span class="inline-block bg-green-50 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                                                    Abgeschlossen
+                                                </span>
+                                            <% } else { %>
+                                                <span class="inline-block bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-medium">
+                                                    Käufer muss bestätigen
+                                                </span>
+                                            <% } %>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+            <% } else { %>
+                <p class="text-sm text-gray-500">Du verkaufst aktuell keine Beiträge.</p>
+            <% } %>
+        </section>
+    </section>
+</section>

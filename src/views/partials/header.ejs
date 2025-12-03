@@ -1,0 +1,45 @@
+<header class="bg-white shadow-sm ring-1 ring-gray-200 fixed w-full top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+            <a href="/">
+                <img src="/public/img/logo_placeholder.png" alt="Logo" class="w-10 h-10">
+            </a>
+            <a href="/" class="text-2xl font-bold text-gray-900 hover:text-blue-600 transition">
+                Fullstack Webprojekt
+            </a>
+        </div>
+        <div class="flex items-center justify-end gap-4">
+            <% if (typeof currentUser !== 'undefined' && currentUser) { %>
+
+                <a href="/profile"
+                   class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-300 text-gray-700 font-bold shadow-sm hover:bg-gray-200">
+                    <%= currentUser.username.slice(0,2) %>
+                </a>
+
+                <form action="/logout" method="post">
+                    <button type="submit" class="text-sm text-gray-600 hover:underline cursor-pointer">
+                        Logout
+                    </button>
+                </form>
+
+                <a href="/posts/new"
+                   class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                    New Post
+                </a>
+                <a
+                    class="inline-flex items-center rounded-md ">
+                </a>
+
+            <% } else { %>
+                <a href="/login" class="text-sm text-gray-600 hover:underline">
+                    Login
+                </a>
+
+                <a href="/register"
+                   class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                    Register
+                </a>
+            <% } %>
+        </div>
+    </div>
+</header>

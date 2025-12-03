@@ -2,9 +2,9 @@
 
 A modern full-stack web application built with Node.js, Express, and PostgreSQL, featuring server-side rendering with EJS templates and styled with Tailwind CSS.
 
-> **⚠️ Disclaimer**: This project is created for educational and practice purposes only.
+> **Disclaimer**: This project is created for educational and practice purposes only.
 
-## 🚀 Tech Stack
+## Tech Stack
 
 ### Backend
 - **[Express.js](https://expressjs.com/) 5.1.0** - Fast, minimalist web framework for Node.js
@@ -26,7 +26,7 @@ A modern full-stack web application built with Node.js, Express, and PostgreSQL,
 - **[concurrently](https://github.com/open-cli-tools/concurrently) 9.2.1** - Runs multiple commands concurrently (CSS watch + server)
 - **[dotenv](https://github.com/motdotla/dotenv) 17.2.3** - Loads environment variables from `.env` file
 
-## ✨ Features
+## Features
 
 - **Server-Side Rendering** - Dynamic HTML generation with EJS templates
 - **PostgreSQL Database** - Robust relational database with Prisma ORM
@@ -35,7 +35,7 @@ A modern full-stack web application built with Node.js, Express, and PostgreSQL,
 - **Database Migrations** - Version-controlled database schema with Prisma Migrate
 - **Production Ready** - Automated build and deployment scripts
 
-## 🛠️ Development Workflow
+## Development Workflow
 
 The project uses a streamlined development setup with concurrent processes:
 

@@ -1,20 +1,38 @@
-<!doctype html>
-<html lang="en">
+<html lang="de">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title><%= typeof title !== 'undefined' ? title : 'Posts App' %></title>
-    <link rel="stylesheet" href="/public/styles.css" />
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title><%= typeof title !== 'undefined' ? title : 'Fullstack Projekt' %></title>
+
+    <link rel="stylesheet" href="/public/styles.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.css">
+
+    <script src="/public/scripts/filterScript.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.js" defer></script>
+    <script src="/public/scripts/swiper-init.js" defer></script>
 </head>
-<body class="bg-gray-50 text-gray-900">
-<div class="max-w-3xl mx-auto py-8 px-4">
-    <header class="mb-6 flex items-center justify-between">
-        <a href="/posts" class="text-2xl font-bold tracking-tight text-gray-900">Posts</a>
-        <a href="/posts/new" class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2">New Post</a>
-    </header>
-    <main class="bg-white shadow-sm ring-1 ring-gray-200 rounded-lg p-5">
-        <%- body %>
+
+<body class="bg-gray-50 text-gray-900 flex flex-col min-h-screen">
+<%# Header %>
+<%- include('./partials/header') %>
+
+<div class="max-w-6xl mx-auto py-8 px-4 flex space-x-6 mt-[4.25rem] items-start grow w-full">
+
+    <%# Sidebar %>
+
+    <%- typeof sidebar !== 'undefined' ? include('./partials/sidebar') : "" %>
+
+    <%# Main Content %>
+    <main class="flex-1">
+        <div id="content" class="bg-white shadow-sm ring-1 ring-gray-200 rounded-lg p-6" >
+            <%- body %>
+        </div>
     </main>
+
 </div>
+
+<%# Footer %>
+<%- include('./partials/footer') %>
+
 </body>
 </html>

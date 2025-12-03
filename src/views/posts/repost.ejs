@@ -1,0 +1,62 @@
+<% title = `Erneut hochladen: ${post.title}` %>
+
+<form action="/posts/<%= post.id %>/repost" method="post" enctype="multipart/form-data" class="space-y-6">
+    <label class="text-lg font-bold">Titel
+        <input type="text" name="title" value="<%- post.title || '' %>" required
+               class="flex mt-1 mb-4 py-1 pl-1 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-2/3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </label>
+
+    <label class="text-lg font-medium">Kategorie
+        <select name="category" required
+                class="flex mt-1 mb-4 py-1 pl-1 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-1/2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <% categories.forEach(function(cat) { %>
+                <option value="<%= cat %>" <%= post.category === cat ? 'selected' : '' %>>
+                    <%= CATEGORY_LABELS[cat] || cat %>
+                </option>
+            <% }) %>
+        </select>
+    </label>
+
+    <label class="text-lg font-medium">Startpreis (CHF)
+        <input type="number" name="startingPrice" step="0.05" min="1.00"
+               value="<%- post.startingPrice || '' %>"
+               class="flex mt-1 mb-4 py-1 pl-1 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-1/8 focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </label>
+
+    <label class="text-lg font-medium">Optionale Sofortkaufpreis (CHF)
+        <input type="number" name="buyNowPrice" step="0.05" min="1.00"
+               value="<%- post.buyNowPrice || '' %>"
+               class="flex mt-1 mb-4 py-1 pl-1 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-1/8 focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </label>
+
+    <label class="text-lg font-medium">Inkremente
+        <select name="increment" required
+                class="flex mt-1 mb-4 py-1 pl-1 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-1/4 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <% increments.forEach(function(inc) { %>
+                <option value="<%= inc %>" <%= post.increment === inc ? 'selected' : '' %>>
+                    + <%= INCREMENT_VALUES[inc] %> CHF
+                </option>
+            <% }) %>
+        </select>
+    </label>
+
+    <label class="text-lg font-medium">Bilder hochladen
+        <input type="file" name="images" accept="image/*" multiple
+               class="block mt-1 py-1 pl-1 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-1/2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <p class="text-xs text-gray-500 mt-1">Neue Bilder werden zu den bestehenden Bildern hinzugefügt.</p>
+    </label>
+
+    <label class="text-lg font-medium">Beschreibung
+        <textarea name="description" rows="6" required
+                  class="flex mt-1 mb-4 py-1 pl-1 text-md text-gray-800 font-normal rounded-md border-gray-400 shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500"><%- post.description || '' %></textarea>
+    </label>
+
+    <div class="flex flex-row-reverse justify-between items-center">
+        <button type="submit"
+                class="text-md font-normal px-4 py-2 rounded md bg-blue-600 text-white shadow-sm hover:bg-blue-500 focus:ring-blue ring-offset-2 transition cursor-pointer">
+            Hochladen
+        </button>
+        <a href="/profile"
+           class="text-sm rounded-md border-gray-600 text-gray-600 shadow-sm px-4 py-2 hover:bg-gray-200 transition">Abbrechen</a>
+    </div>
+</form>
